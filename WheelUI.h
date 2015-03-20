@@ -27,7 +27,7 @@ class EncoderValueScreen : public Screen {
     display.println(String("Value: ") + m_value);
   }
   
-  void handle_event(Event &event) {
+  void handle_event(UI& ui, Event &event) {
     switch (event.source) {
     case 1:
       m_value += (signed char) event.data;
@@ -51,7 +51,7 @@ struct MenuItem {
 class Menu : public Screen {
 
  public:
-  Menu(MenuItem items[]): m_items(items) {
+ Menu(MenuItem items[]): m_items(items) {
     MenuItem *item = items;
 
     while (item->name) {
@@ -62,21 +62,34 @@ class Menu : public Screen {
   
   void draw(Adafruit_GFX& display) {
     display.setTextSize(1);
+    unsigned char i = 0;
+    MenuItem *item = m_items;
     
-    for (MenuItem *(item = m_pos= m_items; item->name; item++) {
-      display.println(item);
+    while(item->name) {
+      if (i == m_pos) {
+	display.setTextColor(WHITE, BLACK);
+      } else {
+	display.setTextColor(BLACK, WHITE);
+      }
+
+      display.println(item->name);
+
+      i++;
+      item++;
     }
   };
 
-  void handle_event(Event &event) {
+  void handle_event(UI& ui, Event &event) {
     switch (event.source) {
     case 1:
-      m_pos += min(m_n_items, max(0, (unsigned char) event.data));
+      m_pos = min(m_n_items - 1,
+		  max(0, 
+		      m_pos + (signed char) event.data));
       break;
     case 2:
-      if (event.data = 1) {
-	//
-      }
+      ui.show(m_items[m_pos].screen);
+      Serial.print("got here");
+      break;
     };
   }
 

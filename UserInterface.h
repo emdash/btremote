@@ -56,6 +56,10 @@
 
 const int SIZE = 8;
 
+/*
+ * Forward declare UI class. We need it in a few places.
+ */
+class UI;
 
 /*
  * A class which represents an input event. Not much here to try and
@@ -129,7 +133,7 @@ class Screen {
  public:
   Screen() {};
   virtual void draw (Adafruit_GFX &display) = 0;
-  virtual void handle_event(Event &) = 0;
+  virtual void handle_event(UI& ui, Event &) = 0;
 };
 
 
@@ -152,34 +156,12 @@ class TestScreen : public Screen {
     display.println(String("Data: ") + last_event.data);
   }
   
-  void handle_event(Event &event) {
+  void handle_event(UI& ui, Event &event) {
     last_event = event;
   }
   
  private:  
   Event & last_event;
-};
-
-
-/*
- * A screen screen which displays static text. Optionally, a screen to
- * return to after an input event.
- */
-class TextScreen : public Screen {
-
- public:
- TextScreen(const char *text, Screen *screen = 0): m_text(text), m_screen(screen);
-
-  public void draw(Adafruit_GFX *display) {
-    display.println(m_text);
-  };
-
-  public void handle_event(Event &event) {  
-  }
-
- private:
-  const char *m_text;
-  Screen *m_screen;
 };
 
 
@@ -195,20 +177,21 @@ class TextScreen : public Screen {
 class UI {
  public:
  UI(Adafruit_GFX& display, Screen &home):
-  m_cur_screen(home),
+  m_cur_screen(&home),
     m_home(home),
     m_display(display) {
   };
   
   void show(Screen &screen) {
-    m_cur_screen = screen;
+    this->m_cur_screen = &screen;
   };
     
   void loop() {
     if (m_queue.count()) {
-      m_cur_screen.handle_event(m_queue.get());
+      m_cur_screen->handle_event(*this, m_queue.get());
     }
-    m_cur_screen.draw(m_display);
+    Serial.println(String("Show:") + ((unsigned long) m_cur_screen));    
+    m_cur_screen->draw(m_display);
   };
     
   void put(unsigned char source, unsigned char data) {
@@ -216,18 +199,42 @@ class UI {
   };
     
  private:
-  Screen &m_cur_screen;
+  Screen *m_cur_screen;
   Screen &m_home;
   Adafruit_GFX& m_display;
   EventQueue m_queue;
-  
-  void draw() {
-    m_cur_screen.draw(m_display);
-  };
-    
-  void handle_event(Event &event) {
-    m_cur_screen.handle_event(event);
-  };
 };
+
+
+/*
+ * A screen screen which displays static text. Optionally, a screen to
+ * return to after an input event.
+ */
+class TextScreen : public Screen {
+
+ public:
+ TextScreen(const char *text, Screen *screen = 0)
+   : m_text(text),
+     m_screen(screen) 
+     {
+     };
+
+  void draw(Adafruit_GFX &display) {
+    display.println(m_text);
+  };
+
+  void handle_event(UI& ui, Event &event) {
+    switch (event.source) {
+    case 2:
+      ui.show(*m_screen);
+      break;
+    };
+  };
+
+ private:
+  const char *m_text;
+  Screen *m_screen;
+};
+
 
 #endif

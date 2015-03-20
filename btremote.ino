@@ -31,12 +31,21 @@ All text above, and the splash screen must be included in any redistribution
 // pin 3 - LCD reset (RST)
 Adafruit_PCD8544 display = Adafruit_PCD8544(0, 1, 2, 3, 5);
 
-#if 0
-TestScreen test_screen = TestScreen();
-#else
-EncoderValueScreen test_screen = EncoderValueScreen();
-#endif
-UI ui = UI(display, test_screen);
+extern Menu main_menu;
+
+TextScreen t1 = TextScreen("Test 1", &main_menu);
+TextScreen t2 = TextScreen("Test 2", &main_menu);
+TestScreen t3;
+
+MenuItem main_menu_items[] = {
+  {"Test1", t1},
+  {"Test2", t2},
+  {"Test3", t3},
+  {0, t3}
+};
+
+Menu main_menu = Menu(main_menu_items);
+UI ui = UI(display, main_menu);
 AdaEncoder volume = AdaEncoder('a', 10, 11);
 
 typedef enum {
@@ -118,6 +127,5 @@ void setup() {
   // text display tests
   display.setTextSize(1);
   display.setTextColor(BLACK);
-  display.setTextColor(WHITE, BLACK); // 'inverted' text
   display.display();
 }
