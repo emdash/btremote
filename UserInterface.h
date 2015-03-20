@@ -132,9 +132,9 @@ class EventQueue {
 class Screen {
  public:
   Screen() {};
-  virtual void draw (Adafruit_GFX &display) = 0;
-  virtual void handle_event(UI& ui, Event &) = 0;
-};
+  virtual void draw (Adafruit_GFX &display) {};
+  virtual void handle_event(UI& ui, Event &) {};
+} null_screen;
 
 
 /*
@@ -213,11 +213,11 @@ class UI {
 class TextScreen : public Screen {
 
  public:
- TextScreen(const char *text, Screen *screen = 0)
+ TextScreen(const char *text, Screen &screen = null_screen)
    : m_text(text),
-     m_screen(screen) 
-     {
-     };
+    m_screen(screen) 
+    {
+    };
 
   void draw(Adafruit_GFX &display) {
     display.println(m_text);
@@ -226,14 +226,14 @@ class TextScreen : public Screen {
   void handle_event(UI& ui, Event &event) {
     switch (event.source) {
     case 2:
-      ui.show(*m_screen);
+      ui.show(m_screen);
       break;
     };
   };
 
  private:
   const char *m_text;
-  Screen *m_screen;
+  Screen &m_screen;
 };
 
 

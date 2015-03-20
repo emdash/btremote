@@ -33,8 +33,8 @@ Adafruit_PCD8544 display = Adafruit_PCD8544(0, 1, 2, 3, 5);
 
 extern Menu main_menu;
 
-TextScreen t1 = TextScreen("Test 1", &main_menu);
-TextScreen t2 = TextScreen("Test 2", &main_menu);
+TextScreen t1 = TextScreen("Test 1", main_menu);
+TextScreen t2 = TextScreen("Test 2", main_menu);
 TestScreen t3;
 
 MenuItem main_menu_items[] = {
