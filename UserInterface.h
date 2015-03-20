@@ -41,8 +41,7 @@
  *  Screens represent a particular mode of interaction. For example,
  *  on an audio player, you might have one screen for playback and
  *  another screen for scrolling through playlists. A couple of
- *  standard screens are provided, including TestScreen, and
- *  EncoderValueScreen.
+ *  standard screens are provided, including TestScreen.
  *
  * Controllers
  *
@@ -163,32 +162,24 @@ class TestScreen : public Screen {
 
 
 /*
- * This is a temporary class that will probaly go away soon.
+ * A screen screen which displays static text. Optionally, a screen to
+ * return to after an input event.
  */
-class EncoderValueScreen : public Screen {
+class TextScreen : public Screen {
+
  public:
-  
-  EncoderValueScreen() {
-    m_value = 0;
+ TextScreen(const char *text, Screen *screen = 0): m_text(text), m_screen(screen);
+
+  public void draw(Adafruit_GFX *display) {
+    display.println(m_text);
   };
-  
-  void draw(Adafruit_GFX &display) {
-    display.println(String("Value: ") + m_value);
+
+  public void handle_event(Event &event) {  
   }
-  
-  void handle_event(Event &event) {
-    switch (event.source) {
-    case 1:
-      m_value += (signed char) event.data;
-      break;
-    case 2:
-      m_value = 0;
-      break; 
-    };
-  }
-  
+
  private:
-  int m_value;
+  const char *m_text;
+  Screen *m_screen;
 };
 
 
