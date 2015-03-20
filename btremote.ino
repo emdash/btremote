@@ -30,7 +30,12 @@ All text above, and the splash screen must be included in any redistribution
 // pin 4 - LCD chip select (CS)
 // pin 3 - LCD reset (RST)
 Adafruit_PCD8544 display = Adafruit_PCD8544(0, 1, 2, 3, 5);
+
+#if 0
 TestScreen test_screen = TestScreen();
+#else
+EncoderValueScreen test_screen = EncoderValueScreen();
+#endif
 UI ui = UI(display, test_screen);
 AdaEncoder volume = AdaEncoder('a', 10, 11);
 
@@ -87,7 +92,6 @@ void pollButtons() {
 }
 
 void loop() {
-  
   // Poll for encoder clicks
   if (volume.getClicks()) {
     ui.put(ENCODER, volume.query());

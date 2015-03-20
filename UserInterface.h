@@ -1,3 +1,55 @@
+/* UserInterface.h
+ *
+ * An Arduino-compatible UI library for use with
+ * Adafruit_GFX-compatible screens.
+ * 
+ * This is the core of a simple UI library that aims to be reasonably
+ * complete and compatible with Adafruit_GFX displays. Aside from
+ * being flexible with the choice of display, the library is also
+ * designed to accomodate a range of programming styles and UI design
+ * patterns, encouraging modeless UI where possible.
+ *
+ * A secondary, but no-less important design goal is efficiency. The
+ * library allows the UI components to be declared statically, which
+ * allows for greater compiler optimization and code size
+ * reduction. At the same time, it is relatively easy to change the
+ * arrangement of components
+ *
+ * Finally, this library aims to be as simple as possible, but no
+ * simpler.
+ *
+ * The Event Queue
+ *
+ *  The Library is organized around EventQueue, which is a ring-buffer
+ *  of events. Events are inserted into the EventQueue by
+ *  InputSources, and are dispatched to one of an arbitrary number of
+ *  screens. The InputSources and Screens are declared statically in
+ *  the user's sketch.
+ *
+ * InputSources
+ *
+ *  Input sources can be either polling or interrupt-driven. A few
+ *  basic input sources are provided, but it is easy to create your
+ *  own if you have special needs not covered by the base library.
+ *
+ *  For polling InputSources, you must poll them in loop()
+ *  before calling UI::loop(). For Interrupt-driven sources, the
+ *  events are inserted into the queue automatically.
+ *
+ * Screens
+ *
+ *  Screens represent a particular mode of interaction. For example,
+ *  on an audio player, you might have one screen for playback and
+ *  another screen for scrolling through playlists. A couple of
+ *  standard screens are provided, including TestScreen, and
+ *  EncoderValueScreen.
+ *
+ * Controllers
+ *
+ *  Controllers can be used to handle user input. They abstract away
+ *  the details of handling certain patterns of events.
+ */
+
 #ifndef USER_INTERFACE_H
 #define USER_INTERFACE_H
 
@@ -127,7 +179,7 @@ class EncoderValueScreen : public Screen {
   void handle_event(Event &event) {
     switch (event.source) {
     case 1:
-      m_value += event.data;
+      m_value += (signed char) event.data;
       break;
     case 2:
       m_value = 0;
@@ -137,7 +189,7 @@ class EncoderValueScreen : public Screen {
   
  private:
   int m_value;
-}
+};
 
 
 /*
