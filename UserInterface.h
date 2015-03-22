@@ -68,9 +68,9 @@ class UI;
  */
 struct Event
 {
-  unsigned long time;
-  unsigned char source;
-  unsigned char data;
+      unsigned long time;
+      unsigned char source;
+      unsigned char data;
 };
 
 /*
@@ -82,59 +82,70 @@ Event null_event = {0, 0, 0};
  * A place to buffer input events for further processing 
  */
 class EventQueue {
- public:
-  EventQueue() {
-    m_front = 0;
-    m_back = 0;
-    m_count = 0;
-  };
+   public:
+      EventQueue() {
+	 m_front = 0;
+	 m_back = 0;
+	 m_count = 0;
+      };
     
-  void put(unsigned char source, unsigned char data) {
-    if (m_count < SIZE) {
-      m_queue[m_back].time = millis();
-      m_queue[m_back].source = source;
-      m_queue[m_back].data = data;
-      m_back = (m_back + 1) % SIZE;
-      m_count++;
-    }
-  };
+      void put(unsigned char source, unsigned char data) {
+	 if (m_count < SIZE) {
+	    m_queue[m_back].time = millis();
+	    m_queue[m_back].source = source;
+	    m_queue[m_back].data = data;
+	    m_back = (m_back + 1) % SIZE;
+	    m_count++;
+	 }
+      };
     
-  Event& get() {
-    if (m_count > 0) {
-      unsigned char idx = m_front;
-      m_front = (m_front + 1) % SIZE;
-      m_count--;
+      Event& get() {
+	 if (m_count > 0) {
+	    unsigned char idx = m_front;
+	    m_front = (m_front + 1) % SIZE;
+	    m_count--;
       
-      return m_queue[idx];
-    }
+	    return m_queue[idx];
+	 }
     
-    return (Event &) null_event;
-  };
+	 return (Event &) null_event;
+      };
   
-  unsigned char count() {
-    return m_count;
-  };
+      unsigned char count() {
+	 return m_count;
+      };
   
- private:
-  unsigned char m_front;
-  unsigned char m_back;
-  unsigned char m_count;
+   private:
+      unsigned char m_front;
+      unsigned char m_back;
+      unsigned char m_count;
 
-  Event m_queue[SIZE];
+      Event m_queue[SIZE];
+};
+
+
+/*
+ * Base class for all polling input sources.
+ */
+class PollingInputSource {
+   public:
+      PollingInputSource() {};
+      virtual void init() {};
+      virtual void poll(UI &q);
 };
 
 
 /*
  * Like a Window in a desktop system, but devoted to the entire
- * screen. A window receives a stream of events, and knows how to draw
- * itself to the screen.
+ * screen. A Screen receives a stream of events, and knows how to draw
+ * itself onto the display.
  */
 class Screen {
- public:
-  Screen() {};
-  virtual void draw (Adafruit_GFX &display) {};
-  virtual void handle_event(UI& ui, Event &) {};
-} null_screen;
+   public:
+      Screen() {};
+      virtual void draw (Adafruit_GFX &display) {};
+      virtual void handle_event(UI& ui, Event &) {};
+};
 
 
 /*
@@ -142,26 +153,25 @@ class Screen {
  * receiving events. It always displays the last received event.
  */
 class TestScreen : public Screen {
- public:
+   public:
   
- TestScreen(): 
-  last_event(null_event)
-  {
-    /* nothing to be done for now */
-  };
+      TestScreen() : last_event(null_event)
+      {
+	 /* nothing to be done for now */
+      };
       
-  void draw(Adafruit_GFX &display) {
-    display.println(String("Time:") + last_event.time);
-    display.println(String("Src: ") + last_event.source);
-    display.println(String("Data: ") + last_event.data);
-  }
+      void draw(Adafruit_GFX &display) {
+	 display.println(String("Time:") + last_event.time);
+	 display.println(String("Src: ") + last_event.source);
+	 display.println(String("Data: ") + last_event.data);
+      }
   
-  void handle_event(UI& ui, Event &event) {
-    last_event = event;
-  }
+      void handle_event(UI& ui, Event &event) {
+	 last_event = event;
+      }
   
- private:  
-  Event & last_event;
+   private:  
+      Event & last_event;
 };
 
 
@@ -175,34 +185,34 @@ class TestScreen : public Screen {
  * put(). This will change when InputSources are implemented.
  */
 class UI {
- public:
- UI(Adafruit_GFX& display, Screen &home):
-  m_cur_screen(&home),
-    m_home(home),
-    m_display(display) {
-  };
+   public:
+      UI(Adafruit_GFX& display, Screen &home):
+	 m_cur_screen(&home),
+	 m_home(home),
+	 m_display(display) {
+      };
   
-  void show(Screen &screen) {
-    this->m_cur_screen = &screen;
-  };
+      void show(Screen &screen) {
+	 this->m_cur_screen = &screen;
+      };
     
-  void loop() {
-    if (m_queue.count()) {
-      m_cur_screen->handle_event(*this, m_queue.get());
-    }
-    Serial.println(String("Show:") + ((unsigned long) m_cur_screen));    
-    m_cur_screen->draw(m_display);
-  };
+      void loop() {
+	 if (m_queue.count()) {
+	    m_cur_screen->handle_event(*this, m_queue.get());
+	 }
+	 Serial.println(String("Show:") + ((unsigned long) m_cur_screen));    
+	 m_cur_screen->draw(m_display);
+      };
     
-  void put(unsigned char source, unsigned char data) {
-    m_queue.put(source, data);
-  };
+      void put(unsigned char source, unsigned char data) {
+	 m_queue.put(source, data);
+      };
     
- private:
-  Screen *m_cur_screen;
-  Screen &m_home;
-  Adafruit_GFX& m_display;
-  EventQueue m_queue;
+   private:
+      Screen *m_cur_screen;
+      Screen &m_home;
+      Adafruit_GFX& m_display;
+      EventQueue m_queue;
 };
 
 
@@ -212,29 +222,75 @@ class UI {
  */
 class TextScreen : public Screen {
 
- public:
- TextScreen(const char *text, Screen &screen = null_screen)
-   : m_text(text),
-    m_screen(screen) 
-    {
-    };
+   public:
+      TextScreen(const char *text, Screen &screen) :
+	 m_text(text),
+	 m_screen(screen) 
+      {
+      };
 
-  void draw(Adafruit_GFX &display) {
-    display.println(m_text);
-  };
+      void draw(Adafruit_GFX &display) {
+	 display.println(m_text);
+      };
 
-  void handle_event(UI& ui, Event &event) {
-    switch (event.source) {
-    case 2:
-      ui.show(m_screen);
-      break;
-    };
-  };
+      void handle_event(UI& ui, Event &event) {
+	 switch (event.source) {
+	    case 2:
+	       ui.show(m_screen);
+	       break;
+	 };
+      };
 
- private:
-  const char *m_text;
-  Screen &m_screen;
+   private:
+      const char *m_text;
+      Screen &m_screen;
 };
 
 
+/*
+ * An input source bound to an I/O pin. Treats the pin as a momentary
+ * push-button.
+ */
+template
+<
+   uint8_t PIN, 
+   uint8_t MODE,
+   uint8_t ID,
+   boolean INVERTED
+>
+class ButtonSrc : PollingInputSource {
+   public:
+      ButtonSrc() : id(ID),
+		    m_debounce(0), 
+		    m_state(INVERTED) {};
+
+      void init() {
+	 pinMode(PIN, MODE);
+	 m_state = digitalRead(PIN);
+      };
+
+      void poll(UI &ui) {
+	 if (millis() < m_debounce) {
+	    return;
+	 }
+
+	 boolean state = digitalRead(PIN);
+
+	 if (state != m_state) {
+	    ui.put(ID, INVERTED ? !state : state);
+	    m_state = state;
+	    m_debounce = millis() + 100;
+	 }
+      };
+
+      const uint8_t id;
+   private:
+      unsigned long m_debounce;
+      boolean m_state;
+};
+
+
+
 #endif
+
+
