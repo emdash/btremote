@@ -51,10 +51,8 @@ MenuItem main_menu_items[] = {
 };
 
 Menu<LEN(main_menu_items)> main_menu(main_menu_items);
-
-UI ui = UI(display, main_menu);
-
-
+ScreenStack<2> stack(main_menu);
+UI ui = UI(display, stack);
 
 void loop() {
    // Poll for events
