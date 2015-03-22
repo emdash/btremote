@@ -28,7 +28,7 @@ typedef enum {
    ENC_WHEEL = 1,
    ENC_BTN,
    LEFT_BTN,
-   RIGHT_BTN
+   RIGHT_BTN,
 } EventSources;
 
 EncoderSrc<'a', 10, 11, ENC_WHEEL>           volume;
@@ -39,9 +39,8 @@ ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
 /*
  * Configure the screens and the main menus.
  */
-
-TextScreen t1 = TextScreen("Test 1");
-TextScreen t2 = TextScreen("Test 2");
+TextScreen t1 = TextScreen("Test 1", LEFT_BTN);
+TextScreen t2 = TextScreen("Test 2", LEFT_BTN);
 TestScreen t3;
 
 MenuItem main_menu_items[] = {
@@ -49,10 +48,12 @@ MenuItem main_menu_items[] = {
    {"Test2", t2},
    {"Test3", t3},
 };
-
 Menu<LEN(main_menu_items)> main_menu(main_menu_items);
-ScreenStack<2> stack(main_menu);
-UI ui = UI(display, stack);
+
+/*
+ * Initialize the UI and the main display.
+ */
+UI ui = UI(display, main_menu);
 
 void loop() {
    // Poll for events

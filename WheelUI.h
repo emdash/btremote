@@ -23,16 +23,11 @@ template <
   uint8_t PIN_B,
   uint8_t ID
 >
-class EncoderSrc : PollingInputSource {
+class EncoderSrc : public PollingInputSource {
   public:
     EncoderSrc() : 
-      m_encoder(CHAR, PIN_A, PIN_B),
-      id(ID) {};
-
-    void init()
-    {
-      
-    };
+      id(ID),
+      m_encoder(CHAR, PIN_A, PIN_B) {};
 
     void poll(UI &ui) {
       if (m_encoder.getClicks()) {
@@ -59,7 +54,7 @@ class EncoderValueScreen : public Screen {
     
     void draw(Adafruit_GFX &display) {
       display.println(String("Value: ") + m_value);
-    }
+    };
     
     void handle_event(UI& ui, Event &event) {
       switch (event.source) {
@@ -70,7 +65,7 @@ class EncoderValueScreen : public Screen {
 	  m_value = 0;
 	  break; 
       };
-    }
+    };
     
   private:
     int m_value;
@@ -111,7 +106,7 @@ class Menu : public Screen
 			  m_pos + (signed char) event.data));
 	  break;
 	case 2:
-	  ui.show(m_items[m_pos].screen);
+	  ui.push(m_items[m_pos].screen);
 	  Serial.print("got here");
 	  break;
       };

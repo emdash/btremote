@@ -88,7 +88,7 @@ class EventQueue {
 	 m_back = 0;
 	 m_count = 0;
       };
-    
+
       void put(unsigned char source, unsigned char data) {
 	 if (m_count < SIZE) {
 	    m_queue[m_back].time = millis();
@@ -98,7 +98,7 @@ class EventQueue {
 	    m_count++;
 	 }
       };
-    
+
       Event& get() {
 	 if (m_count > 0) {
 	    unsigned char idx = m_front;
@@ -176,82 +176,25 @@ class TestScreen : public Screen {
 
 
 /*
- * Context class which manages all the screens and the event queue in
- * your sketch. You shoud declare a global instance of this class in
- * the top level of your sketch. Then you should call its loop method
- * from loop().
- *
- * For now, we need to manually inject events into the event loop with
- * put(). This will change when InputSources are implemented.
- */
-class UI {
-   public:
-      UI(Adafruit_GFX& display, Screen &home):
-	 m_cur_screen(&home),
-	 m_home(home),
-	 m_display(display) {
-      };
-  
-      void show(Screen &screen) {
-	 this->m_cur_screen = &screen;
-      };
-    
-      void loop() {
-	 if (m_queue.count()) {
-	    m_cur_screen->handle_event(*this, m_queue.get());
-	 }
-	 Serial.println(String("Show:") + ((unsigned long) m_cur_screen));    
-	 m_cur_screen->draw(m_display);
-      };
-    
-      void put(unsigned char source, unsigned char data) {
-	 m_queue.put(source, data);
-      };
-    
-   private:
-      Screen *m_cur_screen;
-      Screen &m_home;
-      Adafruit_GFX& m_display;
-      EventQueue m_queue;
-};
-
-
-/*
- * A screen screen which displays static text. Optionally, a screen to
- * return to after an input event.
- */
-class TextScreen : public Screen {
-
-   public:
-      TextScreen(const char *text) : m_text(text) {};
-
-      void draw(Adafruit_GFX &display) {
-	 display.println(m_text);
-      };
-
-      void handle_event(UI& ui, Event &event) {
-      };
-
-   private:
-      const char *m_text;
-};
-
-
-/*
  * A Screen that manages a fixe-sized stack of screens.
  */
-template<uint8_t SIZE> class ScreenStack : public Screen {
+template<
+   uint8_t SIZE
+> 
+class ScreenStack : public Screen {
    public:
-      ScreenStack(const Screen &home) :
+      ScreenStack(Screen &home, uint8_t id) :
 	 m_top(m_screens),
-	 m_end(m_screens + SIZE + 1)
+	 m_end(m_screens + SIZE + 1),
+	 m_id(id)
       {
 	 m_screens[0] = &home;
       };
       
-      void push(const Screen &screen) {
+      void push(Screen &screen) {
 	 if (m_top < m_end) {
-	    *(m_top++) = &screen;
+	    m_top++;
+	    *m_top = &screen;
 	 } else {
 	    Serial.println("Error: Screen Stack Full");
 	 }
@@ -268,12 +211,85 @@ template<uint8_t SIZE> class ScreenStack : public Screen {
       };
 
       void handle_event(UI &ui, Event &event) {
-	 (*m_top)->handle_event(ui, event);
+	 if (event.source == m_id) {
+	    if (event.data == 0) {
+	       pop();
+	    }
+	 } else {
+	    (*m_top)->handle_event(ui, event);
+	 }
       };
    private:
       Screen *m_screens[SIZE + 1];
       Screen **m_top;
       Screen **m_end;
+      uint8_t m_id;
+};
+
+
+/*
+ * Context class which manages all the screens and the event queue in
+ * your sketch. You shoud declare a global instance of this class in
+ * the top level of your sketch. Then you should call its loop method
+ * from loop().
+ *
+ * For now, we need to manually inject events into the event loop with
+ * put(). This will change when InputSources are implemented.
+ */
+class UI {
+   public:
+      UI(Adafruit_GFX& display, Screen &home):
+	 m_stack(home, 255),
+	 m_display(display) {
+      };
+  
+      void push(Screen &screen) {
+	 m_stack.push(screen);
+      };
+    
+      void loop() {
+	 if (m_queue.count()) {
+	    m_stack.handle_event(*this, m_queue.get());
+	 }
+	 m_stack.draw(m_display);
+      };
+    
+      void put(unsigned char source, unsigned char data) {
+	 m_queue.put(source, data);
+      };
+    
+   private:
+      ScreenStack<10> m_stack;
+      Adafruit_GFX& m_display;
+      EventQueue m_queue;
+};
+
+
+/*
+ * A screen screen which displays static text. Optionally, a screen to
+ * return to after an input event.
+ */
+class TextScreen : public Screen {
+
+   public:
+      TextScreen(const char *text, uint8_t back_button) : 
+	 m_text(text),
+	 m_back_button(back_button) {};
+
+      void draw(Adafruit_GFX &display) {
+	 display.println(m_text);
+      };
+
+      void handle_event(UI& ui, Event &event) {
+	 if (event.data && 
+	     event.source == m_back_button) {
+	    ui.put(255, 0);
+	 }
+      };
+
+   private:
+      const char *m_text;
+      const uint8_t m_back_button;
 };
 
 
