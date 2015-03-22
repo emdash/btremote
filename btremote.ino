@@ -13,6 +13,41 @@ sketch.
 
 #define LEN(x) (sizeof(x) / sizeof(x[0]))
 
+/*
+ * Contrast Adjustment.
+ */
+class ContrastAdjustment : public Screen {
+   public:
+      ContrastAdjustment(Adafruit_PCD8544 &display,
+			 uint8_t knob_id,
+			 uint8_t back_button) :
+	 m_display(display),
+	 m_contrast(55),
+	 m_knob_id(knob_id),
+	 m_back_button(back_button) {};
+      
+      void draw(Adafruit_GFX &display) {
+	 display.println(m_contrast);
+      };
+
+      void handle_event(UI &ui, Event &event) {
+	 if (event.source == m_knob_id) {
+	    m_contrast = min(255, max(0, m_contrast + (char) event.data));
+	    m_display.setContrast(m_contrast);
+	 } else if (event.data && event.source == m_back_button) {
+	    Serial.println("got here");
+	    ui.put(255, 0);
+	 }
+      };
+
+   private:
+      Adafruit_PCD8544 &m_display;
+      uint8_t m_contrast;
+      uint8_t m_knob_id;
+      uint8_t m_back_button;
+};
+
+
 // Software SPI (slower updates, more flexible pin options):
 // pin 7 - Serial clock out (SCLK)
 // pin 6 - Serial data out (DIN)
@@ -39,13 +74,13 @@ ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
 /*
  * Configure the screens and the main menus.
  */
-TextScreen t1 = TextScreen("Test 1", LEFT_BTN);
-TextScreen t2 = TextScreen("Test 2", LEFT_BTN);
+TextScreen t1("Test 1", LEFT_BTN);
+ContrastAdjustment contrast(display, ENC_WHEEL, ENC_BTN);
 TestScreen t3;
 
 MenuItem main_menu_items[] = {
    {"Test1", t1},
-   {"Test2", t2},
+   {"Contrast", contrast},
    {"Test3", t3},
 };
 Menu<LEN(main_menu_items)> main_menu(main_menu_items);
@@ -53,7 +88,7 @@ Menu<LEN(main_menu_items)> main_menu(main_menu_items);
 /*
  * Initialize the UI and the main display.
  */
-UI ui = UI(display, main_menu);
+UI ui(display, main_menu);
 
 void loop() {
    // Poll for events

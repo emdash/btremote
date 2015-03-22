@@ -81,7 +81,8 @@ template <int N>
 class Menu : public Screen 
 {
   public:
-    Menu(MenuItem (&items)[N]): m_items(items) {};
+    Menu(MenuItem (&items)[N]): 
+    m_items(items) {};  
   
     void draw(Adafruit_GFX& display) {
       display.setTextSize(1);
