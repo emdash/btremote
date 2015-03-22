@@ -223,27 +223,57 @@ class UI {
 class TextScreen : public Screen {
 
    public:
-      TextScreen(const char *text, Screen &screen) :
-	 m_text(text),
-	 m_screen(screen) 
-      {
-      };
+      TextScreen(const char *text) : m_text(text) {};
 
       void draw(Adafruit_GFX &display) {
 	 display.println(m_text);
       };
 
       void handle_event(UI& ui, Event &event) {
-	 switch (event.source) {
-	    case 2:
-	       ui.show(m_screen);
-	       break;
-	 };
       };
 
    private:
       const char *m_text;
-      Screen &m_screen;
+};
+
+
+/*
+ * A Screen that manages a fixe-sized stack of screens.
+ */
+template<uint8_t SIZE> class ScreenStack : public Screen {
+   public:
+      ScreenStack(const Screen &home) :
+	 m_top(m_screens),
+	 m_end(m_screens + SIZE + 1)
+      {
+	 m_screens[0] = &home;
+      };
+      
+      void push(const Screen &screen) {
+	 if (m_top < m_end) {
+	    *(m_top++) = &screen;
+	 } else {
+	    Serial.println("Error: Screen Stack Full");
+	 }
+      };
+
+      void pop() {
+	 if (m_top > m_screens) {
+	    m_top--;
+	 }
+      };
+
+      void draw(Adafruit_GFX &display) {
+	 (*m_top)->draw(display);
+      };
+
+      void handle_event(UI &ui, Event &event) {
+	 (*m_top)->handle_event(ui, event);
+      };
+   private:
+      Screen *m_screens[SIZE + 1];
+      Screen **m_top;
+      Screen **m_end;
 };
 
 

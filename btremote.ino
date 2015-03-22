@@ -39,8 +39,10 @@ ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
 /*
  * Configure the screens and the main menus.
  */
-extern TextScreen t1, t2;
-extern TestScreen t3;
+
+TextScreen t1 = TextScreen("Test 1");
+TextScreen t2 = TextScreen("Test 2");
+TestScreen t3;
 
 MenuItem main_menu_items[] = {
    {"Test1", t1},
@@ -49,10 +51,6 @@ MenuItem main_menu_items[] = {
 };
 
 Menu<LEN(main_menu_items)> main_menu(main_menu_items);
-
-TextScreen t1 = TextScreen("Test 1", main_menu);
-TextScreen t2 = TextScreen("Test 2", main_menu);
-TestScreen t3;
 
 UI ui = UI(display, main_menu);
 
