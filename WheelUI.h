@@ -4,7 +4,7 @@
  *
  * Provides some features on top of UserInterface.h based on the
  * assumption that the device has at least one encoder wheel
- * and a hand-full of buttons.
+ * and one or more buttons.
  */
 
 #ifndef WHEELUI_H
@@ -12,6 +12,97 @@
 
 #include <AdaEncoder.h>
 #include "UserInterface.h"
+
+
+/* 
+ * This enum defines types of our library is concerned
+ * with. Applications should define input sources which map to these
+ * events.
+ */
+typedef enum {
+   WHEEL = 1,      // raw wheel event
+   BUTTON_PRESS,   // raw button-press event
+   BUTTON_RELEASE, // raw button-relase event
+   CLICK,          // high-level click event
+   HOLD,           // high-level hold event
+   NAVIGATION,     // high-level navigation event
+} WheelUIEvents;
+
+/*
+ * A screen screen which displays static text. Optionally, a screen to
+ * return to after an input event.
+ */
+class TextScreen : public Screen {
+
+   public:
+      TextScreen(const char *text, uint8_t back_button) : 
+	 m_text(text),
+	 m_back_button(back_button) {};
+
+      void draw(Adafruit_GFX &display) {
+	 display.println(m_text);
+      };
+
+      void handle_event(UI& ui, Event &event) {
+	 if (event.data && 
+	     event.source == m_back_button) {
+	    ui.put(255, 0);
+	 }
+      };
+
+   private:
+      const char *m_text;
+      const uint8_t m_back_button;
+};
+
+
+/*
+ * An input source bound to an I/O pin. Treats the pin as a momentary
+ * push-button.
+ */
+template
+<
+uint8_t PIN, 
+   uint8_t MODE,
+   uint8_t ID,
+   uint8_t BUTTON_PRESS,
+   uint8_t BUTTON_RELEASE
+   boolean INVERTED
+>
+class ButtonSrc : PollingInputSource {
+   public:
+      ButtonSrc() : id(ID),
+		    m_debounce(0), 
+		    m_state(INVERTED) {};
+
+      void init() {
+	 pinMode(PIN, MODE);
+	 m_state = digitalRead(PIN);
+      };
+
+      void poll(UI &ui) {
+	 if (millis() < m_debounce) {
+	    return;
+	 }
+
+	 boolean state = digitalRead(PIN);
+
+	 if (state != m_state) {
+	    if (INVERTED) {
+	       ui.put(state ? BUTTON_RELEASE : BUTTON_PRESS, ID);
+	    } else {
+	       ui.put(state ? BUTTON_PRESS : BUTTON_RELEASE, ID);
+	    }
+	    m_state = state;
+	    m_debounce = millis() + 100;
+	 }
+      };
+
+      const uint8_t id;
+   private:
+      unsigned long m_debounce;
+      boolean m_state;
+};
 
 
 /*

@@ -47,29 +47,39 @@ class ContrastAdjustment : public Screen {
       uint8_t m_back_button;
 };
 
-
 // Software SPI (slower updates, more flexible pin options):
-// pin 7 - Serial clock out (SCLK)
-// pin 6 - Serial data out (DIN)
-// pin 5 - Data/Command select (D/C)
-// pin 4 - LCD chip select (CS)
-// pin 3 - LCD reset (RST)
-Adafruit_PCD8544 display = Adafruit_PCD8544(0, 1, 2, 3, 5);
+Adafruit_PCD8544 display = Adafruit_PCD8544(
+   0, // Serial clock out (SCLK)    
+   1, // Serial data out (DIN)
+   2, // Data/Command select (D/C)
+   3, // LCD chip select (CS)
+   5  // LCD reset (RST)
+);
 
-/* 
- * Configure the input sources.
+/*
+ * This will be set for the 
  */
 typedef enum {
-   ENC_WHEEL = 1,
    ENC_BTN,
    LEFT_BTN,
    RIGHT_BTN,
-} EventSources;
+} ButtonIds;
 
-EncoderSrc<'a', 10, 11, ENC_WHEEL>           volume;
-ButtonSrc< 9, INPUT_PULLUP, ENC_BTN,   true> encBtn;
-ButtonSrc<12, INPUT_PULLUP, LEFT_BTN,  true> leftBtn;
-ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
+#define DEFINE_BUTTON(pin, id, name)		\
+   ButtonSrc<
+      pin,					\
+      INPUT_PULLUP,				\
+      id,					\
+      BUTTON_PRESS,				\
+      BUTTON_RELEASE,				\
+      true					\
+    > name
+
+DEFINE_BUTTON( 9, ENC_BTN, encBtn);
+DEFINE_BUTTON(12, LEFT_BTN, leftBtn);
+DEFINE_BUTTON(13, RIGHT_BTN, rightBtn);
+
+EncoderSrc<'a', 10, 11, WHEEL> volume;
 
 /*
  * Configure the screens and the main menus.
