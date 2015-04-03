@@ -197,14 +197,18 @@ Menu<LEN(main_menu_items)> main_menu(main_menu_items);
 UI ui(display, home);
 
 void loop() {
+   static unsigned long next = 0;
    // Poll for events
    volume.poll(ui);
    encBtn.poll(ui);
    leftBtn.poll(ui);
    rightBtn.poll(ui);
   
-   display.clearDisplay();
-   ui.loop();
+   if (millis() > next) {
+      display.clearDisplay();
+      ui.loop();
+      next = millis() + 100;
+   }
    display.display();
 }
 
