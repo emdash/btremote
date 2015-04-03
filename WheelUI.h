@@ -62,11 +62,11 @@ class TextScreen : public Screen {
  */
 template
 <
-uint8_t PIN, 
+   uint8_t PIN, 
    uint8_t MODE,
    uint8_t ID,
    uint8_t BUTTON_PRESS,
-   uint8_t BUTTON_RELEASE
+   uint8_t BUTTON_RELEASE,
    boolean INVERTED
 >
 class ButtonSrc : PollingInputSource {
