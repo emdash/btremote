@@ -160,7 +160,7 @@ typedef enum {
 } ButtonIds;
 
 #define DEFINE_BUTTON(pin, id, name)		\
-   ButtonSrc<
+   ButtonSrc<					\
       pin,					\
       INPUT_PULLUP,				\
       id,					\
