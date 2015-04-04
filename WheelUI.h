@@ -26,8 +26,9 @@ typedef enum {
    BUTTON_RELEASE, // raw button-relase event
    CLICK,          // high-level click event
    HOLD,           // high-level hold event
-   NAVIGATION,     // high-level navigation event
-} WheelUIEvents;
+} EventType;
+
+#define CLICK_THRESHOLD 1000
 
 /*
  * A screen screen which displays static text. Optionally, a screen to
@@ -66,8 +67,6 @@ template
    uint8_t PIN, 
    uint8_t MODE,
    uint8_t ID,
-   uint8_t BUTTON_PRESS,
-   uint8_t BUTTON_RELEASE,
    boolean INVERTED
 >
 class ButtonSrc : PollingInputSource {
@@ -89,18 +88,30 @@ class ButtonSrc : PollingInputSource {
 	 boolean state = digitalRead(PIN);
 
 	 if (state != m_state) {
-	    if (INVERTED) {
-	       ui.put(state ? BUTTON_RELEASE : BUTTON_PRESS, ID);
-	    } else {
-	       ui.put(state ? BUTTON_PRESS : BUTTON_RELEASE, ID);
-	    }
+	    put(ui, INVERTED ? !state : state);
 	    m_state = state;
 	    m_debounce = millis() + 100;
 	 }
       };
 
       const uint8_t id;
+
    private:
+      void put(UI &ui, boolean state) {
+	 if (state) {
+	    ui.put(BUTTON_PRESS, ID);
+	    m_pressed = millis();
+	 } else {
+	    ui.put(BUTTON_RELEASE, ID);
+	    if (millis() > m_pressed + CLICK_THRESHOLD) {
+	       ui.put(HOLD, ID);
+	    } else {
+	       ui.put(CLICK, ID);
+	    }
+	 }
+      };
+
+      unsigned long m_pressed;
       unsigned long m_debounce;
       boolean m_state;
 };
@@ -305,13 +316,16 @@ class IconView : public Screen {
  */
 class Toggle {
    public:
-      Toggle(Model<boolean> &model, uint8_t button_id) : 
+      Toggle(Model<boolean> &model,
+	     uint8_t button_id,
+	     EventType type = CLICK) : 
 	 m_model(model),
-	 m_id(button_id) {
+	 m_id(button_id),
+	 m_type(type) {
       };
 
       void handle_event(UI &ui, Event &event) {
-	 if (event.source == BUTTON_PRESS) {
+	 if (event.source == m_type) {
 	    if (event.data == m_id) {
 	       m_model.update(!m_model.value());
 	    };
@@ -320,7 +334,8 @@ class Toggle {
 
    private:
       Model<boolean> &m_model;
-      uint8_t m_id;
+      const uint8_t m_id;
+      EventType m_type;
 };
 
 
@@ -354,5 +369,6 @@ class Knob {
       T m_min;
       T m_max;
 };
+
 
 #endif

@@ -42,8 +42,6 @@ typedef enum {
       pin,					\
       INPUT_PULLUP,				\
       id,					\
-      BUTTON_PRESS,				\
-      BUTTON_RELEASE,				\
       true					\
     > name
 
@@ -53,7 +51,7 @@ DEFINE_BUTTON(13, RIGHT_BTN, rightBtn);
 EncoderSrc<'a', 10, 11, WHEEL> encoder;
 
 /*
- * Define global models.
+ * Define the data that we want to display and manipulate.
  */
 DirectModel<double>   g_volume(0.5);
 DirectModel<boolean>  g_playing(false);
