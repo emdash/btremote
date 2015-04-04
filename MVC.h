@@ -70,9 +70,7 @@ template <typename T> class DirectModel : public Model<T> {
 template <typename T> class ProxyModel : public Model<T> {
   public:
     ProxyModel(T initial) :
-     m_cache(initial),
-     Model<T>::m_dirty(true) 
-   {
+     m_cache(initial) {
    };
 
    void proxy_set(T value) {
