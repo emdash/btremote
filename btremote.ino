@@ -79,12 +79,14 @@ class MainScreen : public Screen {
    public:
       MainScreen() :
 	 m_playing(false),
+	 m_volume(0.5),
 	 m_artist_scroll(m_artist),
 	 m_track_scroll(m_track),
-	 m_volume(0.5)
+	 m_source_scroll(m_source)
       {
 	 strncpy(m_artist, "Phil Collins", sizeof(m_artist));
 	 strncpy(m_track, "In the air tonight", sizeof(m_track));
+	 strncpy(m_source, "Spotify: Stared", sizeof(m_source));
       };
       
       void draw(Adafruit_GFX &display) {
@@ -97,26 +99,10 @@ class MainScreen : public Screen {
 	 display.setCursor(-pos, 0);
 	 m_artist_scroll.draw(display);
 	 m_track_scroll.draw(display);
+	 m_source_scroll.draw(display);
 
-	 if (m_playing) {
-	    display.fillTriangle(
-	       0, h - 10,
-	       5, h - 5,
-	       0, h,
-	       BLACK);
-	 } else {
-	    display.fillRect(
-	       0, h - 10,
-	       3, 10,
-	       BLACK);
-
-	    display.fillRect(
-	       4, h - 10,
-	       3, 10,
-	       BLACK);
-
-	    drawVolumeIndicator(display, w, h);
-	 }
+	 drawVolumeIndicator(display, w, h);
+	 drawPlayPauseIndicator(display, w, h);
       };
 
       void handle_event(UI &ui, Event &event) {
@@ -131,6 +117,26 @@ class MainScreen : public Screen {
       };
 
    private:
+      void drawPlayPauseIndicator(Adafruit_GFX &display, uint8_t w, uint8_t h) {
+	 if (m_playing) {
+	    display.fillTriangle(
+	       0, h - 10,
+	       5, h - 5,
+	       0, h,
+	       BLACK);
+	 } else {
+	    display.fillRect(
+	       0, h - 10,
+	       3, 10,
+	       BLACK);
+	    display.fillRect(
+	       4, h - 10,
+	       3, 10,
+	       BLACK);
+	 }
+      };
+	 
+
       void drawVolumeIndicator(Adafruit_GFX &display, uint8_t w, uint8_t h) {
 	 // static icon
 	 display.drawBitmap(
@@ -140,19 +146,25 @@ class MainScreen : public Screen {
 	    16, 8,
 	    BLACK);
 
+	 // Draw a triangle outline that "fills up" according to the
+	 // volume level. I.e. at 0 volume, it's just a solid
+	 // outline. At full volume it's completely filled.
+
+	 // First, draw the filled triangle.
 	 display.fillTriangle(
 	    w - 50, h,
 	    w - 12, h,
 	    w - 12, h - 8,
 	    BLACK);
 
+	 // Now, erase the unfilled portion of the triangle.
 	 uint8_t tfill = (50 - 12) * m_volume;
-
 	 display.fillRect(
-	    w - 50 + tfill, 8,
+	    w - 50 + tfill, h - 8,
 	    50 - 12 - tfill, h,
 	    WHITE);
 
+	 // Now, draw the triangle outline.
 	 display.drawTriangle(
 	    w - 50, h,
 	    w - 12, h,
@@ -162,10 +174,12 @@ class MainScreen : public Screen {
 
       char m_artist[20];
       char m_track[20];
+      char m_source[20];
+      double m_volume;
       boolean m_playing;
       ScrolledText<20,  0, 14> m_artist_scroll;
       ScrolledText<20, 10, 14> m_track_scroll;
-      double m_volume;
+      ScrolledText<20, 20, 14> m_source_scroll;
 };
 
 
