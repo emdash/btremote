@@ -50,6 +50,24 @@ DEFINE_BUTTON(12, LEFT_BTN, leftBtn);
 DEFINE_BUTTON(13, RIGHT_BTN, rightBtn);
 EncoderSrc<'a', 10, 11, WHEEL> encoder;
 
+class ContrastModel : public ProxyModel<uint8_t> {
+   public:
+      ContrastModel(Adafruit_PCD8544 &display, uint8_t value) :
+	 ProxyModel<uint8_t>::ProxyModel(value),
+	 m_display(display)
+      {
+	 update(value);
+      };
+
+      void update(uint8_t value) {
+	 m_display.setContrast(value);
+	 proxy_set(value);
+      };
+
+   private:
+      Adafruit_PCD8544 &m_display;
+};
+
 /*
  * Define the data that we want to display and manipulate.
  */
@@ -59,40 +77,30 @@ DirectModel<boolean>  g_online_mode(false);
 DirectStringModel<25> g_source("Spotify(Starred)");
 DirectStringModel<25> g_artist("Phill Collins");
 DirectStringModel<25> g_track("In the air tonight.");
+ContrastModel         g_contrast(display, 65);
 
 /*
  * Contrast Adjustment.
  */
 class ContrastAdjustment : public Screen {
    public:
-      ContrastAdjustment(Adafruit_PCD8544 &display,
-			 uint8_t knob_id,
-			 uint8_t back_button) :
-	 m_display(display),
-	 m_contrast(55),
-	 m_knob_id(knob_id),
-	 m_back_button(back_button) {};
+      ContrastAdjustment() :
+	 m_knob(g_contrast, 1, 45, 70) {
+      };
       
       void draw(Adafruit_GFX &display) {
-	 display.println(m_contrast);
+	 display.println(g_contrast.value());
       };
 
       void handle_event(UI &ui, Event &event) {
-	 if (event.source == m_knob_id) {
-	    m_contrast = min(255, max(0, m_contrast + (char) event.data));
-	    m_display.setContrast(m_contrast);
-	 } else if (event.data && event.source == m_back_button) {
-	    ui.put(255, 0);
-	 }
+	 m_knob.handle_event(ui, event);
       };
 
    private:
-      Adafruit_PCD8544 &m_display;
-      uint8_t m_contrast;
-      uint8_t m_knob_id;
-      uint8_t m_back_button;
+      Knob<uint8_t> m_knob;
 };
 
+ContrastAdjustment contrast;
 
 /*
  * Main screen
