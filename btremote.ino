@@ -80,7 +80,8 @@ class MainScreen : public Screen {
       MainScreen() :
 	 m_playing(false),
 	 m_artist_scroll(m_artist),
-	 m_track_scroll(m_track)
+	 m_track_scroll(m_track),
+	 m_volume(0.5)
       {
 	 strncpy(m_artist, "Phil Collins", sizeof(m_artist));
 	 strncpy(m_track, "In the air tonight", sizeof(m_track));
@@ -112,15 +113,10 @@ class MainScreen : public Screen {
 	    display.fillRect(
 	       4, h - 10,
 	       3, 10,
-	       BLACK);	       
-	 }
+	       BLACK);
 
-	 display.drawBitmap(
-	    w - 16,
-	    h - 8,
-	    SPEAKER_ICON,
-	    16, 8,
-	    BLACK);
+	    drawVolumeIndicator(display, w, h);
+	 }
       };
 
       void handle_event(UI &ui, Event &event) {
@@ -128,15 +124,48 @@ class MainScreen : public Screen {
 	    case BUTTON_PRESS:
 	       m_playing = !m_playing;
 	       break;
+	    case WHEEL:
+	       m_volume = max(0, min(1, m_volume + 0.05 * int8_t(event.data)));
+	       break;
 	 };
       };
 
    private:
+      void drawVolumeIndicator(Adafruit_GFX &display, uint8_t w, uint8_t h) {
+	 // static icon
+	 display.drawBitmap(
+	    w - 10,
+	    h - 8,
+	    SPEAKER_ICON,
+	    16, 8,
+	    BLACK);
+
+	 display.fillTriangle(
+	    w - 50, h,
+	    w - 12, h,
+	    w - 12, h - 8,
+	    BLACK);
+
+	 uint8_t tfill = (50 - 12) * m_volume;
+
+	 display.fillRect(
+	    w - 50 + tfill, 8,
+	    50 - 12 - tfill, h,
+	    WHITE);
+
+	 display.drawTriangle(
+	    w - 50, h,
+	    w - 12, h,
+	    w - 12, h - 8,
+	    BLACK);
+      };
+
       char m_artist[20];
       char m_track[20];
       boolean m_playing;
       ScrolledText<20,  0, 14> m_artist_scroll;
       ScrolledText<20, 10, 14> m_track_scroll;
+      double m_volume;
 };
 
 
@@ -206,7 +235,7 @@ void loop() {
    if (millis() > next) {
       display.clearDisplay();
       ui.loop();
-      next = millis() + 100;
+      next = millis() + 25;
    }
    display.display();
 }
