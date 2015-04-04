@@ -245,7 +245,7 @@ class IconView : public Screen {
    public:
       IconView(uint8_t x,
 	       uint8_t y,
-	       const uint8_t PROGMEM *data) : 
+	       const uint8_t *data) : 
 	 m_data(data),
 	 m_x(x),
 	 m_y(y) {
@@ -259,7 +259,7 @@ class IconView : public Screen {
 	    BLACK);
       };
    private:
-      const uint8_t PROGMEM *m_data;
+      const uint8_t *m_data;
       const uint8_t m_x;
       const uint8_t m_y;
 };
