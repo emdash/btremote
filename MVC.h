@@ -112,4 +112,13 @@ class DirectStringModel : public Model<const char *> {
 };
 
 
+/*
+ * Controller Base class
+ */
+class Controller {
+  public:
+    virtual void handle_event(UI &ui, Event &event);
+};
+
+
 #endif

@@ -268,7 +268,7 @@ class IconView : public Screen {
 /*
  * Controller which uses a button to toggle a boolean value.
  */
-class Toggle {
+class Toggle : public Controller {
    public:
       Toggle(Model<boolean> &model,
 	     uint8_t button_id,
@@ -297,7 +297,7 @@ class Toggle {
  * Controller which uses the encoder wheel to adjust a scalar value.
  */
 template <typename T>
-class Knob {
+class Knob : public Controller {
    public:
       Knob(Model<T> &model, T coefficient, T min, T max) :
 	 m_model(model),
@@ -323,6 +323,5 @@ class Knob {
       T m_min;
       T m_max;
 };
-
 
 #endif
