@@ -65,14 +65,14 @@ class ContrastAdjustment : public Screen {
  * Main screen
  */
 static const unsigned char PROGMEM SPEAKER_ICON[] = {
-   B00000101, B10000000,
+   B00000100, B10000000,
    B00001100, B01000000,
    B00011101, B00100000,
    B11111100, B10100000,
    B11111100, B10100000,
    B00011101, B00100000,
    B00001100, B01000000,
-   B00000101, B10000000,
+   B00000100, B10000000,
 };
 
 class MainScreen : public Screen {
