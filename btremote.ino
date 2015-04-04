@@ -170,25 +170,13 @@ class MainScreen : public Screen {
       Knob<double> m_volume_controller;
 };
 
-
 /*
  * Configure the screens and the main menus.
  */
 MainScreen home;
-ContrastAdjustment contrast(display, WHEEL, ENC_BTN);
-TestScreen t3;
-
-#if 0
-MenuItem main_menu_items[] = {
-   {"Home", home},
-   {"Contrast", contrast},
-   {"Test3", t3},
-};
-Menu<LEN(main_menu_items)> main_menu(main_menu_items);
-#endif
 
 /*
- * Initialize the UI and the main display.
+ * Initialize the UI with our root screen.
  */
 UI ui(display, home);
 

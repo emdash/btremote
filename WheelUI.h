@@ -175,52 +175,6 @@ class EncoderValueScreen : public Screen {
 };
 
 
-struct MenuItem {
-    const char *name;
-    Screen &screen;
-};
-
-template <int N> 
-class Menu : public Screen 
-{
-  public:
-    Menu(MenuItem (&items)[N]): 
-    m_items(items) {};  
-  
-    void draw(Adafruit_GFX& display) {
-      display.setTextSize(1);
-      unsigned int i = 0;
-    
-      for (i = 0; i < N; i++) {
-	if (i == m_pos) {
-	  display.setTextColor(WHITE, BLACK);
-	} else {
-	  display.setTextColor(BLACK, WHITE);
-	}
-
-	display.println(m_items[i].name);
-      }
-    };
-
-    void handle_event(UI& ui, Event &event) {
-      switch (event.source) {
-	case 1:
-	  m_pos = min(N - 1,
-		      max(0, 
-			  m_pos + (signed char) event.data));
-	  break;
-	case 2:
-	  ui.push(m_items[m_pos].screen);
-	  Serial.print("got here");
-	  break;
-      };
-    }
-
-  private:
-    MenuItem (&m_items)[N];
-    unsigned char m_pos;
-};
-
 
 /*
  * Displays a line of text larger than the screen by scrolling it
