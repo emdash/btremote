@@ -6,13 +6,13 @@
 /*
  * Generic model class. 
  * 
- * Rather than implement the observer pattern for views, views poll
- * their models for dirty state. The assumption here is that we will
- * do screen updates at a fixed rate, and only redraw views that proxy
- * dirty values. All visible views that proxy dirty values would be
- * redrawn in the same tick of the event loop, and generally only one
- * view for a model would be visible at any given time. The dirty state
- * will then be automatically cleared at the end of the even loop tick.
+ * Rather than implement the observer pattern, views poll their models
+ * for dirty state. The assumption here is that we will do screen
+ * updates at a fixed rate, and only redraw views that proxy dirty
+ * values. All visible views that proxy dirty values would be redrawn
+ * in the same tick of the event loop, and generally only one view for
+ * a model would be visible at any given time. The dirty state will
+ * then be automatically cleared at the end of the event loop tick.
  *
  * Model becomes dirty when its value is updates. It is considered
  * dirty until it is explicitly reset.
@@ -36,47 +36,43 @@ template <typename T> class Model {
 
 
 /*
- * There are two types of Model: Reference models, and Proxy
- * models. Reference models simply update a plain reference to a
- * value. Proxy models take a function pointer, which is invoked to
- * update the model. The function should ensure that the proxy_set()
- * method is called finalize the update. Moreover, proxy_set may be
- * called asynchronously.
+ * There are two types of Model: Direct models, and Proxy
+ * models. Direct models simply wrap an internal copy of a value and
+ * synchronously update.
  */
-template <typename T> class RefModel : public Model<T> {
+template <typename T> class DirectModel : public Model<T> {
   public:
-   RefModel(T &ref) :
-      m_ref(ref) {
+   DirectModel(T val) :
+      m_val(val) {
    };
 
    void update(T value) {
-      m_ref = value;
+      m_val = value;
       Model<T>::m_dirty = true;
    };
 
    T value() {
-      return m_ref;
+      return m_val;
    };
    
   private:
-   T &m_ref;
+   T m_val;
 };
 
 
+/*
+ * Proxy models are intended for proxying remote data. You should
+ * subclass ProxyModel and define update() as appropriate. update()
+ * may or may not synchronously update the model value. Call
+ * proxy_set() either internally or externally to commit the value
+ * change.
+ */
 template <typename T> class ProxyModel : public Model<T> {
   public:
-   typedef boolean (Callback)(ProxyModel<T> &model, T value);
-
-   ProxyModel(Callback callback, T initial) :
-     ProxyModel<T>::m_callback(callback),
+    ProxyModel(T initial) :
      m_cache(initial),
      Model<T>::m_dirty(true) 
    {
-      m_callback(this, initial);
-   };
-
-   void update(T value) {
-      m_callback(*this, value);
    };
 
    void proxy_set(T value) {
@@ -89,11 +85,33 @@ template <typename T> class ProxyModel : public Model<T> {
    };
 
   private:
-   Callback m_callback;
-   T m_cache;
+    T m_cache;
 };
 
 
+/*
+ * Special case model for fixed-length character arrays. Update copies
+ * the string into the internal buffer.
+ */
+template<uint8_t SIZE>
+class DirectStringModel : public Model<const char *> {
+  public:
+    DirectStringModel(const char *initial) {
+      strncpy(m_buffer, initial, SIZE);
+    };
+
+    void update(const char *value) {
+      strncpy(m_buffer, value, SIZE);
+      Model<const char *>::m_dirty = true;
+    };
+
+    const char *value () {
+      return m_buffer;
+    };
+
+  private:
+    char m_buffer[SIZE];
+};
 
 
 #endif

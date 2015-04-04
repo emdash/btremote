@@ -216,7 +216,6 @@ class Menu : public Screen
  * horizontally.
  */
 template <
-   uint8_t SIZE,
    uint8_t Y,
    uint8_t CHARS_PER_LINE
 >
@@ -226,13 +225,16 @@ class ScrolledText : public Screen {
 
       void draw(Adafruit_GFX &display) {
 	 if (strlen(m_text) > CHARS_PER_LINE) {
+	    // we must ignore the dirty bit in this case, since we are
+	    // contantly updating the screen.
 	    uint8_t w = display.width() - 1;
 	    uint8_t m = w / 5;
 	    display.setCursor(w - ((millis() / 1000) % m) * 20, Y);
+	    display.print(m_text);
 	 } else {
 	    display.setCursor(0, Y);
+	    display.print(m_text);
 	 }
-	 display.print(m_text);
       };
 
    private:

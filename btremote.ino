@@ -16,7 +16,9 @@ sketch.
 
 #define LEN(x) (sizeof(x) / sizeof(x[0]))
 
-// Software SPI (slower updates, more flexible pin options):
+/*
+ * Define the display, including hardware pin-outs.
+ */
 Adafruit_PCD8544 display = Adafruit_PCD8544(
    0, // Serial clock out (SCLK)    
    1, // Serial data out (DIN)
@@ -26,24 +28,39 @@ Adafruit_PCD8544 display = Adafruit_PCD8544(
 );
 
 /*
- * Characters per line at different font size settings. This assumes
- * the default orientation.
- */
-const uint8_t CHARS_PER_LINE[] = {
-   14,
-   14,
-   6,
-   5,
-};
-
-/*
- * Button IDs
+ * Define input sources, and the mapping from hardware inputs map to
+ * UI events.
  */
 typedef enum {
    ENC_BTN,
    LEFT_BTN,
    RIGHT_BTN,
 } ButtonIds;
+
+#define DEFINE_BUTTON(pin, id, name)		\
+   ButtonSrc<					\
+      pin,					\
+      INPUT_PULLUP,				\
+      id,					\
+      BUTTON_PRESS,				\
+      BUTTON_RELEASE,				\
+      true					\
+    > name
+
+DEFINE_BUTTON( 9, ENC_BTN, encBtn);
+DEFINE_BUTTON(12, LEFT_BTN, leftBtn);
+DEFINE_BUTTON(13, RIGHT_BTN, rightBtn);
+EncoderSrc<'a', 10, 11, WHEEL> encoder;
+
+/*
+ * Define global models.
+ */
+DirectModel<double>   g_volume(0.5);
+DirectModel<boolean>  g_playing(false);
+DirectModel<boolean>  g_online_mode(false);
+DirectStringModel<25> g_source("Spotify(Starred)");
+DirectStringModel<25> g_artist("Phill Collins");
+DirectStringModel<25> g_track("In the air tonight.");
 
 /*
  * Contrast Adjustment.
@@ -78,43 +95,30 @@ class ContrastAdjustment : public Screen {
       uint8_t m_back_button;
 };
 
+
 /*
  * Main screen
  */
-
-
 class MainScreen : public Screen {
    public:
       MainScreen() :
-	 m_playing(false),
-	 m_volume(0.5),
-	 m_artist_scroll(m_artist),
-	 m_track_scroll(m_track),
-	 m_source_scroll(m_source),
-	 m_play_model(m_playing),
-	 m_volume_model(m_volume),
-	 m_play_indicator(m_play_model, m_play_icon, m_pause_icon),
-	 m_play_controller(m_play_model, ENC_BTN),
-	 m_volume_controller(m_volume_model, 0.05, 0, 1.0)
-      {
-	 strncpy(m_artist, "Phil Collins", sizeof(m_artist));
-	 strncpy(m_track, "In the air tonight", sizeof(m_track));
-	 strncpy(m_source, "Spotify: Stared", sizeof(m_source));
+	 m_artist_scroll(g_artist.value()),
+	 m_track_scroll(g_track.value()),
+	 m_source_scroll(g_source.value()),
+	 m_play_indicator(g_playing, m_play_icon, m_pause_icon),
+	 m_play_controller(g_playing, ENC_BTN),
+	 m_volume_controller(g_volume, 0.05, 0, 1.0)
+      {	 
       };
       
       void draw(Adafruit_GFX &display) {
-	 uint8_t w = display.width() - 1;
-	 uint8_t h = display.height() - 1;
-	 uint8_t pos = (millis() / 100) % w;
-
 	 display.setTextSize(1);
 	 display.setTextWrap(false);
-	 display.setCursor(-pos, 0);
 	 m_artist_scroll.draw(display);
 	 m_track_scroll.draw(display);
 	 m_source_scroll.draw(display);
 
-	 drawVolumeIndicator(display, w, h);
+	 drawVolumeIndicator(display);
 	 m_play_indicator.draw(display);
       };
 
@@ -125,7 +129,10 @@ class MainScreen : public Screen {
 
    private:
 
-      void drawVolumeIndicator(Adafruit_GFX &display, uint8_t w, uint8_t h) {
+      void drawVolumeIndicator(Adafruit_GFX &display) {
+	 uint8_t w = LCDWIDTH - 1;
+	 uint8_t h = LCDHEIGHT - 1;
+
 	 m_speaker_icon.draw(display);
 
 	 // Draw a triangle outline that "fills up" according to the
@@ -140,7 +147,7 @@ class MainScreen : public Screen {
 	    BLACK);
 
 	 // Now, erase the unfilled portion of the triangle.
-	 uint8_t tfill = (50 - 12) * m_volume;
+	 uint8_t tfill = (50 - 12) * g_volume.value();
 	 display.fillRect(
 	    w - 50 + tfill, h - 8,
 	    50 - 12 - tfill, h,
@@ -154,40 +161,17 @@ class MainScreen : public Screen {
 	    BLACK);
       };
 
-      char m_artist[20];
-      char m_track[20];
-      char m_source[20];
-      boolean m_playing;
-      float m_volume;
-      ScrolledText<20,  0, 14> m_artist_scroll;
-      ScrolledText<20, 10, 14> m_track_scroll;
-      ScrolledText<20, 20, 14> m_source_scroll;
+      ScrolledText<0, 14> m_artist_scroll;
+      ScrolledText<10, 14> m_track_scroll;
+      ScrolledText<20, 14> m_source_scroll;
       SpeakerIcon<LCDWIDTH - 11, LCDHEIGHT - 8> m_speaker_icon;
       PlayIcon<0, LCDHEIGHT - 9> m_play_icon;
       PauseIcon<0, LCDHEIGHT - 9> m_pause_icon;
-      RefModel<boolean> m_play_model;
-      RefModel<float> m_volume_model;
       ToggleView m_play_indicator;
       Toggle m_play_controller;
-      Knob<float> m_volume_controller;
+      Knob<double> m_volume_controller;
 };
 
-
-#define DEFINE_BUTTON(pin, id, name)		\
-   ButtonSrc<					\
-      pin,					\
-      INPUT_PULLUP,				\
-      id,					\
-      BUTTON_PRESS,				\
-      BUTTON_RELEASE,				\
-      true					\
-    > name
-
-DEFINE_BUTTON( 9, ENC_BTN, encBtn);
-DEFINE_BUTTON(12, LEFT_BTN, leftBtn);
-DEFINE_BUTTON(13, RIGHT_BTN, rightBtn);
-
-EncoderSrc<'a', 10, 11, WHEEL> volume;
 
 /*
  * Configure the screens and the main menus.
@@ -212,12 +196,14 @@ UI ui(display, home);
 
 void loop() {
    static unsigned long next = 0;
-   // Poll for events
-   volume.poll(ui);
+   // Poll input sources for events
+   encoder.poll(ui);
    encBtn.poll(ui);
    leftBtn.poll(ui);
    rightBtn.poll(ui);
   
+   // update screen every 25ms
+   // TODO: dirty detection
    if (millis() > next) {
       display.clearDisplay();
       ui.loop();
@@ -230,18 +216,16 @@ void setup() {
    Serial.begin(9600);
    display.begin();
 
-   volume.init();
+   encoder.init();
    encBtn.init();
    leftBtn.init();
    rightBtn.init();
   
-   // you can change the contrast around to adapt the display
-   // for the best viewing!
-   display.setContrast(55);
-   display.clearDisplay();   // clears the screen and buffer
+   // todo: load value from persistent storage
+   display.setContrast(60);
+   display.clearDisplay();
 
    // text display tests
    display.setTextSize(1);
    display.setTextColor(BLACK);
-   display.display();
 }
