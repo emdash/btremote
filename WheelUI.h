@@ -12,6 +12,7 @@
 
 #include <AdaEncoder.h>
 #include "UserInterface.h"
+#include "MVC.h"
 
 
 /* 
@@ -238,5 +239,118 @@ class ScrolledText : public Screen {
       const char *m_text;
 };
 
+
+/*
+ * Switches between two views based on the state of a boolean.
+ */
+class ToggleView : public Screen {
+   public:
+      ToggleView(Model<boolean> &model,
+		 Screen &if_true,
+		 Screen &if_false) :
+	 m_model(model),
+	 m_true(if_true),
+	 m_false(if_false) {
+      };
+
+      void draw(Adafruit_GFX &display) {
+	 if (m_model.value()) {
+	    m_true.draw(display);
+	 } else {
+	    m_false.draw(display);
+	 }
+      };
+   private:
+      Model<boolean> &m_model;
+      Screen &m_true;
+      Screen &m_false;
+};
+
+
+/*
+ * Draws an icon at the specified coordinates and dimensions.
+ */
+template <
+   uint8_t W,
+   uint8_t H
+>
+class IconView : public Screen {
+   public:
+      IconView(uint8_t x,
+	       uint8_t y,
+	       const uint8_t PROGMEM *data) : 
+	 m_data(data),
+	 m_x(x),
+	 m_y(y) {
+      };
+
+      void draw(Adafruit_GFX &display) {
+	 display.drawBitmap(
+	    m_x, m_y,
+	    m_data,
+	    W, H,
+	    BLACK);
+      };
+   private:
+      const uint8_t PROGMEM *m_data;
+      const uint8_t m_x;
+      const uint8_t m_y;
+};
+
+
+/*
+ * Controller which uses a button to toggle a boolean value.
+ */
+class Toggle {
+   public:
+      Toggle(Model<boolean> &model, uint8_t button_id) : 
+	 m_model(model),
+	 m_id(button_id) {
+      };
+
+      void handle_event(UI &ui, Event &event) {
+	 if (event.source == BUTTON_PRESS) {
+	    if (event.data == m_id) {
+	       m_model.update(!m_model.value());
+	    };
+	 }
+      };
+
+   private:
+      Model<boolean> &m_model;
+      uint8_t m_id;
+};
+
+
+/*
+ * Controller which uses the encoder wheel to adjust a scalar value.
+ */
+template <typename T>
+class Knob {
+   public:
+      Knob(Model<T> &model, T coefficient, T min, T max) :
+	 m_model(model),
+	 m_coefficient(coefficient),
+	 m_min(min),
+	 m_max(max)
+      {
+      };
+
+      void handle_event(UI &ui, Event &event) {
+	 if (event.source == WHEEL) {
+	    m_model.update(
+	       constrain(
+		  m_model.value() + m_coefficient * char(event.data),
+		  m_min,
+		  m_max));
+	 };
+      };
+
+   private:
+      Model<T> &m_model;
+      T m_coefficient;
+      T m_min;
+      T m_max;
+};
 
 #endif

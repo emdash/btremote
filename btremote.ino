@@ -11,10 +11,19 @@ sketch.
 #include <AdaEncoder.h>
 #include <string.h>
 #include "WheelUI.h"
+#include "MVC.h"
+#include "Icons.h"
 
 #define LEN(x) (sizeof(x) / sizeof(x[0]))
 
-typedef const unsigned char PROGMEM static_icon[];
+// Software SPI (slower updates, more flexible pin options):
+Adafruit_PCD8544 display = Adafruit_PCD8544(
+   0, // Serial clock out (SCLK)    
+   1, // Serial data out (DIN)
+   2, // Data/Command select (D/C)
+   3, // LCD chip select (CS)
+   5  // LCD reset (RST)
+);
 
 /*
  * Characters per line at different font size settings. This assumes
@@ -27,6 +36,14 @@ const uint8_t CHARS_PER_LINE[] = {
    5,
 };
 
+/*
+ * Button IDs
+ */
+typedef enum {
+   ENC_BTN,
+   LEFT_BTN,
+   RIGHT_BTN,
+} ButtonIds;
 
 /*
  * Contrast Adjustment.
@@ -64,16 +81,7 @@ class ContrastAdjustment : public Screen {
 /*
  * Main screen
  */
-static const unsigned char PROGMEM SPEAKER_ICON[] = {
-   B00000100, B10000000,
-   B00001100, B01000000,
-   B00011101, B00100000,
-   B11111100, B10100000,
-   B11111100, B10100000,
-   B00011101, B00100000,
-   B00001100, B01000000,
-   B00000100, B10000000,
-};
+
 
 class MainScreen : public Screen {
    public:
@@ -82,7 +90,12 @@ class MainScreen : public Screen {
 	 m_volume(0.5),
 	 m_artist_scroll(m_artist),
 	 m_track_scroll(m_track),
-	 m_source_scroll(m_source)
+	 m_source_scroll(m_source),
+	 m_play_model(m_playing),
+	 m_volume_model(m_volume),
+	 m_play_indicator(m_play_model, m_play_icon, m_pause_icon),
+	 m_play_controller(m_play_model, ENC_BTN),
+	 m_volume_controller(m_volume_model, 0.05, 0, 1.0)
       {
 	 strncpy(m_artist, "Phil Collins", sizeof(m_artist));
 	 strncpy(m_track, "In the air tonight", sizeof(m_track));
@@ -102,49 +115,18 @@ class MainScreen : public Screen {
 	 m_source_scroll.draw(display);
 
 	 drawVolumeIndicator(display, w, h);
-	 drawPlayPauseIndicator(display, w, h);
+	 m_play_indicator.draw(display);
       };
 
       void handle_event(UI &ui, Event &event) {
-	 switch (event.source) {
-	    case BUTTON_PRESS:
-	       m_playing = !m_playing;
-	       break;
-	    case WHEEL:
-	       m_volume = max(0, min(1, m_volume + 0.05 * int8_t(event.data)));
-	       break;
-	 };
+	 m_play_controller.handle_event(ui, event);
+	 m_volume_controller.handle_event(ui, event);
       };
 
    private:
-      void drawPlayPauseIndicator(Adafruit_GFX &display, uint8_t w, uint8_t h) {
-	 if (m_playing) {
-	    display.fillTriangle(
-	       0, h - 10,
-	       5, h - 5,
-	       0, h,
-	       BLACK);
-	 } else {
-	    display.fillRect(
-	       0, h - 10,
-	       3, 10,
-	       BLACK);
-	    display.fillRect(
-	       4, h - 10,
-	       3, 10,
-	       BLACK);
-	 }
-      };
-	 
 
       void drawVolumeIndicator(Adafruit_GFX &display, uint8_t w, uint8_t h) {
-	 // static icon
-	 display.drawBitmap(
-	    w - 10,
-	    h - 8,
-	    SPEAKER_ICON,
-	    16, 8,
-	    BLACK);
+	 m_speaker_icon.draw(display);
 
 	 // Draw a triangle outline that "fills up" according to the
 	 // volume level. I.e. at 0 volume, it's just a solid
@@ -175,31 +157,21 @@ class MainScreen : public Screen {
       char m_artist[20];
       char m_track[20];
       char m_source[20];
-      double m_volume;
       boolean m_playing;
+      float m_volume;
       ScrolledText<20,  0, 14> m_artist_scroll;
       ScrolledText<20, 10, 14> m_track_scroll;
       ScrolledText<20, 20, 14> m_source_scroll;
+      SpeakerIcon<LCDWIDTH - 11, LCDHEIGHT - 8> m_speaker_icon;
+      PlayIcon<0, LCDHEIGHT - 9> m_play_icon;
+      PauseIcon<0, LCDHEIGHT - 9> m_pause_icon;
+      RefModel<boolean> m_play_model;
+      RefModel<float> m_volume_model;
+      ToggleView m_play_indicator;
+      Toggle m_play_controller;
+      Knob<float> m_volume_controller;
 };
 
-
-// Software SPI (slower updates, more flexible pin options):
-Adafruit_PCD8544 display = Adafruit_PCD8544(
-   0, // Serial clock out (SCLK)    
-   1, // Serial data out (DIN)
-   2, // Data/Command select (D/C)
-   3, // LCD chip select (CS)
-   5  // LCD reset (RST)
-);
-
-/*
- * This will be set for the 
- */
-typedef enum {
-   ENC_BTN,
-   LEFT_BTN,
-   RIGHT_BTN,
-} ButtonIds;
 
 #define DEFINE_BUTTON(pin, id, name)		\
    ButtonSrc<					\
