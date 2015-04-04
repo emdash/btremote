@@ -246,6 +246,10 @@ class UI {
       void push(Screen &screen) {
 	 m_stack.push(screen);
       };
+
+      void pop() {
+	 m_stack.pop();
+      };
     
       void loop() {
 	 if (m_queue.count()) {

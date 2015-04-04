@@ -14,6 +14,19 @@
 #include "UserInterface.h"
 #include "MVC.h"
 
+template<class T> struct SmartRef {
+    T &ref;
+};
+
+template <
+  uint8_t N_VIEWS,
+  uint8_t N_CONTROLLERS
+>
+struct Layout {
+    SmartRef<Screen> views[N_VIEWS];
+    SmartRef<Controller> controllers[N_CONTROLLERS];
+};
+
 
 /* 
  * This enum defines types of our library is concerned
@@ -55,6 +68,109 @@ class TextScreen : public Screen {
    private:
       const char *m_text;
       const uint8_t m_back_button;
+};
+
+
+/*
+ * A screen which displays a value range.
+ */
+template<typename T>
+class RangeView : public Screen {
+  public:
+    RangeView(
+      Model<T> &model,
+      T min, 
+      T max,
+      uint8_t x, 
+      uint8_t y,
+      uint8_t w,
+      uint8_t h) :
+      m_model(model),
+      m_min(min),
+      m_max(max),
+      m_x(x),
+      m_y(y),
+      m_w(w),
+      m_h(h){
+    };
+
+    void draw(Adafruit_GFX &display) {
+      uint8_t 
+	x1 = m_x,
+	y1 = m_y + m_h,
+	x2 = m_x + m_w,
+	y2 = y1,
+	x3 = x2,
+	y3 = m_y,
+	tfill = m_w * ((m_model.value() - m_min) / (m_max - m_min));
+
+      // Draw a triangle outline that "fills up" according to the
+      // volume level. I.e. at 0 volume, it's just a solid
+      // outline. At full volume it's completely filled.
+
+      // First, draw the filled triangle.
+      display.fillTriangle(
+	x1, y1,
+	x2, y2,
+	x3, y3,
+	BLACK);
+    
+      // Now, erase the unfilled portion of the triangle.
+      display.fillRect(
+	m_x + tfill, m_y,
+	m_w - tfill, m_h,
+	WHITE);
+
+      // now draw the outlined portion of the triangle.
+      display.drawTriangle(
+	x1, y1,
+	x2, y2,
+	x3, y3,
+	BLACK);
+    };
+
+  private:
+    Model<T> &m_model;
+    T m_min;
+    T m_max;
+    const uint8_t m_x;
+    const uint8_t m_y;
+    const uint8_t m_w;
+    const uint8_t m_h;
+};
+
+
+/*
+ * A Screen which is composed of a set of screens and controllers. It
+ * is defined by a Layout. A CompositeScreen allways draws all the
+ * views in the layout and always passes each event off to all the
+ * controllers in the layout.
+ */
+template
+<
+  uint8_t N_VIEWS,
+  uint8_t N_CONTROLLERS
+>
+class CompositeScreen : public Screen {
+  public:
+    CompositeScreen(const Layout<N_VIEWS, N_CONTROLLERS> &layout) :
+      m_layout(layout) {
+    };
+
+    void draw(Adafruit_GFX &display) {
+      for (uint8_t i = 0; i < N_VIEWS; i++) {
+	m_layout.views[i].ref.draw(display);
+      }
+    };
+
+    void handle_event(UI& ui, Event &event) {
+      for (uint8_t i = 0; i < N_CONTROLLERS; i++) {
+	m_layout.controllers[i].ref.handle_event(ui, event);
+      }
+    };
+
+  private:
+    const Layout<N_VIEWS, N_CONTROLLERS> &m_layout;
 };
 
 
@@ -185,25 +301,24 @@ template <
    uint8_t CHARS_PER_LINE
 >
 class ScrolledText : public Screen {
-   public:
-      ScrolledText(const char *text) : m_text(text) {};
-
-      void draw(Adafruit_GFX &display) {
-	 if (strlen(m_text) > CHARS_PER_LINE) {
-	    // we must ignore the dirty bit in this case, since we are
-	    // contantly updating the screen.
-	    uint8_t w = display.width() - 1;
-	    uint8_t m = w / 5;
-	    display.setCursor(w - ((millis() / 1000) % m) * 20, Y);
-	    display.print(m_text);
-	 } else {
-	    display.setCursor(0, Y);
-	    display.print(m_text);
-	 }
-      };
-
-   private:
-      const char *m_text;
+  public:
+    ScrolledText(const char *text) : m_text(text) {};
+    
+    void draw(Adafruit_GFX &display) {
+      display.setTextWrap(false);
+      if (strlen(m_text) > CHARS_PER_LINE) {
+	uint8_t w = display.width() - 1;
+	uint8_t m = w / 5;
+	display.setCursor(w - ((millis() / 1000) % m) * 20, Y);
+	display.print(m_text);
+      } else {
+	display.setCursor(0, Y);
+	display.print(m_text);
+      }
+    };
+    
+  private:
+    const char *m_text;
 };
 
 

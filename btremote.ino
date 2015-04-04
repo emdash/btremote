@@ -37,19 +37,14 @@ typedef enum {
    RIGHT_BTN,
 } ButtonIds;
 
-#define DEFINE_BUTTON(pin, id, name)		\
-   ButtonSrc<					\
-      pin,					\
-      INPUT_PULLUP,				\
-      id,					\
-      true					\
-    > name
-
-DEFINE_BUTTON( 9, ENC_BTN, encBtn);
-DEFINE_BUTTON(12, LEFT_BTN, leftBtn);
-DEFINE_BUTTON(13, RIGHT_BTN, rightBtn);
+ButtonSrc< 9, INPUT_PULLUP, ENC_BTN, true> encBtn;
+ButtonSrc<12, INPUT_PULLUP, LEFT_BTN, true> leftBtn;
+ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
 EncoderSrc<'a', 10, 11, WHEEL> encoder;
 
+/*
+ * Define a model for the contrast setting on a supported display.
+ */
 class ContrastModel : public ProxyModel<uint8_t> {
    public:
       ContrastModel(Adafruit_PCD8544 &display, uint8_t value) :
@@ -103,85 +98,48 @@ class ContrastAdjustment : public Screen {
 ContrastAdjustment contrast;
 
 /*
- * Main screen
+ * Views for the main screen.
  */
-class MainScreen : public Screen {
-   public:
-      MainScreen() :
-	 m_artist_scroll(g_artist.value()),
-	 m_track_scroll(g_track.value()),
-	 m_source_scroll(g_source.value()),
-	 m_play_indicator(g_playing, m_play_icon, m_pause_icon),
-	 m_play_controller(g_playing, ENC_BTN),
-	 m_volume_controller(g_volume, 0.05, 0, 1.0)
-      {	 
-      };
-      
-      void draw(Adafruit_GFX &display) {
-	 display.setTextSize(1);
-	 display.setTextWrap(false);
-	 m_artist_scroll.draw(display);
-	 m_track_scroll.draw(display);
-	 m_source_scroll.draw(display);
+ScrolledText< 0, 14> g_artist_scroll(g_artist.value());
+ScrolledText<10, 14> g_track_scroll(g_track.value());
+ScrolledText<20, 14> g_source_scroll(g_source.value());
 
-	 drawVolumeIndicator(display);
-	 m_play_indicator.draw(display);
-      };
+SpeakerIcon<LCDWIDTH - 11, LCDHEIGHT - 8> g_speaker_icon;
+PlayIcon   <0,             LCDHEIGHT - 9> g_play_icon;
+PauseIcon  <0,             LCDHEIGHT - 9> g_pause_icon;
 
-      void handle_event(UI &ui, Event &event) {
-	 m_play_controller.handle_event(ui, event);
-	 m_volume_controller.handle_event(ui, event);
-      };
-
-   private:
-
-      void drawVolumeIndicator(Adafruit_GFX &display) {
-	 uint8_t w = LCDWIDTH - 1;
-	 uint8_t h = LCDHEIGHT - 1;
-
-	 m_speaker_icon.draw(display);
-
-	 // Draw a triangle outline that "fills up" according to the
-	 // volume level. I.e. at 0 volume, it's just a solid
-	 // outline. At full volume it's completely filled.
-
-	 // First, draw the filled triangle.
-	 display.fillTriangle(
-	    w - 50, h,
-	    w - 12, h,
-	    w - 12, h - 8,
-	    BLACK);
-
-	 // Now, erase the unfilled portion of the triangle.
-	 uint8_t tfill = (50 - 12) * g_volume.value();
-	 display.fillRect(
-	    w - 50 + tfill, h - 8,
-	    50 - 12 - tfill, h,
-	    WHITE);
-
-	 // Now, draw the triangle outline.
-	 display.drawTriangle(
-	    w - 50, h,
-	    w - 12, h,
-	    w - 12, h - 8,
-	    BLACK);
-      };
-
-      ScrolledText<0, 14> m_artist_scroll;
-      ScrolledText<10, 14> m_track_scroll;
-      ScrolledText<20, 14> m_source_scroll;
-      SpeakerIcon<LCDWIDTH - 11, LCDHEIGHT - 8> m_speaker_icon;
-      PlayIcon<0, LCDHEIGHT - 9> m_play_icon;
-      PauseIcon<0, LCDHEIGHT - 9> m_pause_icon;
-      ToggleView m_play_indicator;
-      Toggle m_play_controller;
-      Knob<double> m_volume_controller;
-};
+RangeView<double> g_volume_indicator(
+   g_volume, 0, 1.0,
+   LCDWIDTH - 53, LCDHEIGHT - 9,
+   40, 8
+);
+ToggleView g_play_indicator(g_playing, g_play_icon, g_pause_icon);
 
 /*
- * Configure the screens and the main menus.
+ * Controllers for the main screen.
  */
-MainScreen home;
+Toggle g_play_controller(g_playing, ENC_BTN);
+Knob<double> g_volume_controller(g_volume, 0.05, 0, 1.0);
+
+/*
+ * Define the main screen
+ */
+const Layout<6, 2> main_layout = {
+   {
+      {g_source_scroll},
+      {g_artist_scroll}, 
+      {g_track_scroll},
+      {g_speaker_icon},
+      {g_volume_indicator},
+      {g_play_indicator},
+   },
+   {
+      {g_play_controller},
+      {g_volume_controller},
+   }
+};
+
+CompositeScreen<6, 2> home(main_layout);
 
 /*
  * Initialize the UI with our root screen.
@@ -209,6 +167,7 @@ void loop() {
 void setup() {
    Serial.begin(9600);
    display.begin();
+   Serial.println("got here");
 
    encoder.init();
    encBtn.init();
