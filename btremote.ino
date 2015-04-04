@@ -50,7 +50,6 @@ class ContrastAdjustment : public Screen {
 	    m_contrast = min(255, max(0, m_contrast + (char) event.data));
 	    m_display.setContrast(m_contrast);
 	 } else if (event.data && event.source == m_back_button) {
-	    Serial.println("got here");
 	    ui.put(255, 0);
 	 }
       };

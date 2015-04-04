@@ -227,8 +227,7 @@ class ScrolledText : public Screen {
 	 if (strlen(m_text) > CHARS_PER_LINE) {
 	    uint8_t w = display.width() - 1;
 	    uint8_t m = w / 5;
-	    display.setCursor(w - ((millis() / 1000) % m) * 15, Y);
-	    Serial.println(millis());
+	    display.setCursor(w - ((millis() / 1000) % m) * 20, Y);
 	 } else {
 	    display.setCursor(0, Y);
 	 }
