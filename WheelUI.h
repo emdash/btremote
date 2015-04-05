@@ -365,7 +365,7 @@ class Toggle : public Controller {
    private:
       Model<boolean> &m_model;
       const uint8_t m_id;
-      EventType m_type;
+      const EventType m_type;
 };
 
 
