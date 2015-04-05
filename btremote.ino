@@ -68,7 +68,7 @@ class ContrastModel : public ProxyModel<uint8_t> {
  */
 DirectModel<double>   g_volume(0.5);
 DirectModel<boolean>  g_playing(false);
-DirectModel<boolean>  g_online_mode(false);
+DirectModel<boolean>  g_online(false);
 DirectStringModel<25> g_source("Spotify(Starred)");
 DirectStringModel<25> g_artist("Phill Collins");
 DirectStringModel<25> g_track("In the air tonight.");
@@ -103,17 +103,16 @@ ContrastAdjustment contrast;
 ScrolledText< 0, 14> g_artist_scroll(g_artist.value());
 ScrolledText<10, 14> g_track_scroll(g_track.value());
 ScrolledText<20, 14> g_source_scroll(g_source.value());
-
 SpeakerIcon<LCDWIDTH - 11, LCDHEIGHT - 8> g_speaker_icon;
 PlayIcon   <0,             LCDHEIGHT - 9> g_play_icon;
 PauseIcon  <0,             LCDHEIGHT - 9> g_pause_icon;
-
-RangeView<double> g_volume_indicator(
-   g_volume, 0, 1.0,
-   LCDWIDTH - 53, LCDHEIGHT - 9,
-   40, 8
-);
+RangeView<double> g_volume_indicator(g_volume, 0, 1.0,
+				     LCDWIDTH - 53, LCDHEIGHT - 9,
+				     40, 8);
 ToggleView g_play_indicator(g_playing, g_play_icon, g_pause_icon);
+OnlineIcon<9, LCDHEIGHT - 9> g_online_icon;
+OfflineIcon<9, LCDHEIGHT - 9> g_offline_icon;
+ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 
 /*
  * Controllers for the main screen.
@@ -124,7 +123,7 @@ Knob<double> g_volume_controller(g_volume, 0.05, 0, 1.0);
 /*
  * Define the main screen
  */
-const Layout<6, 2> main_layout = {
+const Layout<7, 2> main_layout = {
    {
       {g_source_scroll},
       {g_artist_scroll}, 
@@ -132,6 +131,7 @@ const Layout<6, 2> main_layout = {
       {g_speaker_icon},
       {g_volume_indicator},
       {g_play_indicator},
+      {g_network_indicator},
    },
    {
       {g_play_controller},
@@ -139,7 +139,7 @@ const Layout<6, 2> main_layout = {
    }
 };
 
-CompositeScreen<6, 2> home(main_layout);
+CompositeScreen<7, 2> home(main_layout);
 
 /*
  * Initialize the UI with our root screen.
@@ -153,6 +153,15 @@ void loop() {
    encBtn.poll(ui);
    leftBtn.poll(ui);
    rightBtn.poll(ui);
+
+   // Test some features by reading data from Serial.
+   if (Serial.available()) {
+      switch (Serial.read()) {
+	 case 'o':
+	    g_online.update(!g_online.value());
+	    break;
+      };
+   }
   
    // update screen every 25ms
    // TODO: dirty detection
