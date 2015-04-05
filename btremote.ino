@@ -45,22 +45,27 @@ EncoderSrc<'a', 10, 11, WHEEL> encoder;
 /*
  * Define a model for the contrast setting on a supported display.
  */
-class ContrastModel : public ProxyModel<uint8_t> {
+class ContrastModel : public ProxyModel<double> {
    public:
-      ContrastModel(Adafruit_PCD8544 &display, uint8_t value) :
-	 ProxyModel<uint8_t>::ProxyModel(value),
+      ContrastModel(Adafruit_PCD8544 &display, double value) :
+	 ProxyModel<double>::ProxyModel(value),
 	 m_display(display)
       {
 	 update(value);
       };
 
-      void update(uint8_t value) {
-	 m_display.setContrast(value);
+      void update(double value) {
+	 m_display.setContrast(min_contrast + 
+			       value * double(max_contrast - min_contrast));
 	 proxy_set(value);
       };
 
    private:
       Adafruit_PCD8544 &m_display;
+
+      // values determined experimentally and may need adjustment.
+      static const uint8_t min_contrast = 48;
+      static const uint8_t max_contrast = 70;
 };
 
 /*
@@ -73,15 +78,14 @@ DirectModel<boolean>  g_paired(true);
 DirectStringModel<25> g_source("Spotify(Starred)");
 DirectStringModel<25> g_artist("Phill Collins");
 DirectStringModel<25> g_track("In the air tonight.");
-ContrastModel         g_contrast(display, 65);
+ContrastModel         g_contrast(display, 0.5);
 
 /*
  * Contrast Adjustment.
  */
 Label g_contrast_label("Contrast:");
-RangeView<uint8_t> g_contrast_indicator(g_contrast, 45, 70);
-
-Knob<uint8_t> g_contrast_controller(g_contrast, 1, 45, 70);
+RangeView<double> g_contrast_indicator(g_contrast, 0, 1.0);
+Knob<double> g_contrast_controller(g_contrast, 0.05, 0, 1.0);
 PopController g_back_button(CLICK, LEFT_BTN);
 
 Layout<2, 2> settings_layout = {
