@@ -50,31 +50,25 @@ typedef enum {
 
 
 /*
- * A screen screen which displays static text. Optionally, a screen to
- * return to after an input event.
+ * A screen screen which displays static text.
  */
-class TextScreen : public Screen {
+class Label : public Screen {
 
    public:
-      TextScreen(const char *text, uint8_t back_button) : 
+      Label(const char *text, boolean wrap=true) : 
 	 m_text(text),
-	 m_back_button(back_button) {};
+	 m_wrap(wrap) {
+      };
 
       void draw(Adafruit_GFX &display, const Rect &where) {
+	 display.setTextWrap(m_wrap);
 	 display.setCursor(where.x, where.y);
 	 display.println(m_text);
       };
 
-      void handle_event(UI& ui, Event &event) {
-	 if (event.data && 
-	     event.source == m_back_button) {
-	    ui.put(255, 0);
-	 }
-      };
-
    private:
       const char *m_text;
-      const uint8_t m_back_button;
+      boolean m_wrap;
 };
 
 
