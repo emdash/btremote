@@ -77,35 +77,31 @@ ContrastModel         g_contrast(display, 65);
 /*
  * Contrast Adjustment.
  */
-class SettingsScreen : public Screen {
-   public:
-      SettingsScreen() :
-	 m_knob(g_contrast, 1, 45, 70) {
-      };
-      
-      void draw(Adafruit_GFX &display) {
-	 display.println(g_contrast.value());
-      };
+Label g_contrast_label("Contrast:");
+RangeView<uint8_t> g_contrast_indicator(g_contrast, 45, 70);
 
-      void handle_event(UI &ui, Event &event) {
-	 m_knob.handle_event(ui, event);
-	 if (event.source == CLICK) {
-	    ui.pop();
-	 };
-      };
+Knob<uint8_t> g_contrast_controller(g_contrast, 1, 45, 70);
+PopController g_back_button(CLICK, LEFT_BTN);
 
-   private:
-      Knob<uint8_t> m_knob;
+Layout<2, 2> settings_layout = {
+   {
+      {{0,  0, LCDWIDTH - 1, 10}, g_contrast_label},
+      {{0, 10, LCDWIDTH - 1,  8}, g_contrast_indicator},
+   },
+   {
+      {g_contrast_controller},
+      {g_back_button}
+   }
 };
 
-SettingsScreen g_settings;
+CompositeScreen<2, 2> g_settings(settings_layout);
 
 /*
  * Views for the main screen.
  */
-ScrolledText< 0, 14> g_artist_scroll(g_artist.value());
-ScrolledText<10, 14> g_track_scroll(g_track.value());
-ScrolledText<20, 14> g_source_scroll(g_source.value());
+ScrolledText g_artist_scroll(g_artist.value());
+ScrolledText g_track_scroll(g_track.value());
+ScrolledText g_source_scroll(g_source.value());
 RangeView<double> g_volume_indicator(g_volume, 0, 1.0);
 
 ToggleView g_play_indicator(g_playing, g_play_icon, g_pause_icon);
@@ -123,9 +119,9 @@ PushController g_show_settings(g_settings, HOLD, ENC_BTN);
  */
 const Layout<7, 3> main_layout = {
    {
-      {{0, 0, 0, 0}, g_source_scroll},
-      {{0, 0, 0, 0}, g_artist_scroll}, 
-      {{0, 0, 0, 0}, g_track_scroll},
+      {{0, 0, LCDWIDTH, 10}, g_source_scroll},
+      {{0, 10, LCDWIDTH, 10}, g_artist_scroll}, 
+      {{0, 20, LCDWIDTH, 10}, g_track_scroll},
       {{LCDWIDTH - 11, LCDHEIGHT - 9, 0, 0}, g_speaker_icon},
       {{30, LCDHEIGHT - 9, 40, 8}, g_volume_indicator},
       {{0, LCDHEIGHT - 9, 0, 0}, g_play_indicator},

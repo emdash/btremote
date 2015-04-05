@@ -255,23 +255,22 @@ class EncoderSrc : public PollingInputSource {
  * Displays a line of text larger than the screen by scrolling it
  * horizontally.
  */
-template <
-   uint8_t Y,
-   uint8_t CHARS_PER_LINE
->
+
 class ScrolledText : public Screen {
   public:
     ScrolledText(const char *text) : m_text(text) {};
     
     void draw(Adafruit_GFX &display, const Rect &where) {
       display.setTextWrap(false);
-      if (strlen(m_text) > CHARS_PER_LINE) {
-	uint8_t w = display.width() - 1;
+      display.setTextSize(1);
+
+      if (strlen(m_text) > (where.w) / 6) {
+	uint8_t w = where.w;
 	uint8_t m = w / 5;
-	display.setCursor(w - ((millis() / 1000) % m) * 20, Y);
+	display.setCursor(w - ((millis() / 1000) % m) * 20, where.y);
 	display.print(m_text);
       } else {
-	display.setCursor(0, Y);
+	display.setCursor(0, where.y);
 	display.print(m_text);
       }
     };
