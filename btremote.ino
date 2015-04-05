@@ -69,6 +69,7 @@ class ContrastModel : public ProxyModel<uint8_t> {
 DirectModel<double>   g_volume(0.5);
 DirectModel<boolean>  g_playing(false);
 DirectModel<boolean>  g_online(false);
+DirectModel<boolean>  g_paired(true);
 DirectStringModel<25> g_source("Spotify(Starred)");
 DirectStringModel<25> g_artist("Phill Collins");
 DirectStringModel<25> g_track("In the air tonight.");
@@ -137,9 +138,15 @@ const Layout<7, 3> main_layout = {
 CompositeScreen<7, 3> home(main_layout);
 
 /*
+ * This screen shows if we are not paired to a phone.
+ */
+Label g_unpaired_screen("Press any key to pair.");
+ToggleView root(g_paired, home, g_unpaired_screen);
+
+/*
  * Initialize the UI with our root screen.
  */
-UI ui(display, home);
+UI ui(display, root);
 
 void loop() {
    static unsigned long next = 0;
@@ -154,6 +161,9 @@ void loop() {
       switch (Serial.read()) {
 	 case 'o':
 	    g_online.update(!g_online.value());
+	    break;
+	 case 'p':
+	    g_paired.update(!g_paired.value());
 	    break;
       };
    }
