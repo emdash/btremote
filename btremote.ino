@@ -77,9 +77,9 @@ ContrastModel         g_contrast(display, 65);
 /*
  * Contrast Adjustment.
  */
-class ContrastAdjustment : public Screen {
+class SettingsScreen : public Screen {
    public:
-      ContrastAdjustment() :
+      SettingsScreen() :
 	 m_knob(g_contrast, 1, 45, 70) {
       };
       
@@ -89,13 +89,16 @@ class ContrastAdjustment : public Screen {
 
       void handle_event(UI &ui, Event &event) {
 	 m_knob.handle_event(ui, event);
+	 if (event.source == CLICK) {
+	    ui.pop();
+	 };
       };
 
    private:
       Knob<uint8_t> m_knob;
 };
 
-ContrastAdjustment contrast;
+SettingsScreen g_settings;
 
 /*
  * Views for the main screen.
@@ -119,11 +122,12 @@ ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
  */
 Toggle g_play_controller(g_playing, ENC_BTN);
 Knob<double> g_volume_controller(g_volume, 0.05, 0, 1.0);
+PushController g_show_settings(g_settings, HOLD, ENC_BTN);
 
 /*
  * Define the main screen
  */
-const Layout<7, 2> main_layout = {
+const Layout<7, 3> main_layout = {
    {
       {g_source_scroll},
       {g_artist_scroll}, 
@@ -136,10 +140,11 @@ const Layout<7, 2> main_layout = {
    {
       {g_play_controller},
       {g_volume_controller},
+      {g_show_settings},
    }
 };
 
-CompositeScreen<7, 2> home(main_layout);
+CompositeScreen<7, 3> home(main_layout);
 
 /*
  * Initialize the UI with our root screen.

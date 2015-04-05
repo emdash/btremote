@@ -439,4 +439,61 @@ class Knob : public Controller {
       T m_max;
 };
 
+
+/*
+ * Controller which pushes and pops screens.
+ */
+class NavController : public Controller {
+  public:
+    NavController(
+      EventType push_source,
+      uint8_t push_id) :
+      m_push_source(push_source),
+      m_push_id(push_id) {
+    };
+
+    virtual void action(UI &ui) {};
+
+    void handle_event(UI &ui, Event &event) {
+      if (event.source == m_push_source) {
+	if (event.data == m_push_id) {
+	  action(ui);
+	}
+      }
+    };
+
+  private:
+    EventType m_push_source;
+    const uint8_t m_push_id;
+};
+
+class PushController : public NavController {
+  public:
+    PushController(
+      Screen &s,
+      EventType src,
+      uint8_t id) :
+      NavController::NavController(src, id),
+      m_screen(s) {
+    };
+
+    void action(UI &ui) {
+      ui.push(m_screen);
+    };
+
+  private:
+    Screen &m_screen;
+};
+
+class PopController : public NavController {
+  public:
+    PopController(EventType src, uint8_t id) :
+      NavController::NavController(src, id) {
+    };
+
+    void action(UI &ui) {
+      ui.pop();
+    };
+};
+
 #endif
