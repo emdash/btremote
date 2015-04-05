@@ -68,6 +68,52 @@ class ContrastModel : public ProxyModel<double> {
       static const uint8_t max_contrast = 70;
 };
 
+
+/*
+ * Controllers which make network requests in response to user
+ * Define the main screeninput. This is a dummy implementation which
+ * fakes network calls over the Serial line.
+ */
+typedef enum {
+   TOGGLE_PLAYBACK,
+   NEXT_TRACK,
+   PREV_TRACK,
+   LIKE_TRACK,
+   TOGGLE_ONLINE,
+   NEXT_PLAYLIST,
+   PREV_PLAYLIST,
+} NetworkMessage;
+
+#define DEBUG_CASE(name)			\
+   case name:					\
+   Serial.println(#name);			\
+   break
+
+class NetworkController : public Command {
+   public:
+      NetworkController(
+	 NetworkMessage message,
+	 EventType source,
+	 uint8_t id) :
+	 Command::Command(source, id),
+	 m_message(message) {
+      };
+
+      void action(UI &ui) {
+	 switch (m_message) {
+	    DEBUG_CASE(TOGGLE_PLAYBACK);
+	    DEBUG_CASE(NEXT_TRACK);
+	    DEBUG_CASE(PREV_TRACK);
+	    DEBUG_CASE(LIKE_TRACK);
+	    DEBUG_CASE(PREV_PLAYLIST);
+	    DEBUG_CASE(NEXT_PLAYLIST);
+	 };
+      };
+   private:
+      NetworkMessage m_message;
+};
+
+
 /*
  * Define the data that we want to display and manipulate.
  */
@@ -81,25 +127,34 @@ DirectStringModel<25> g_track("In the air tonight.");
 ContrastModel         g_contrast(display, 0.5);
 
 /*
- * Contrast Adjustment.
+ * Settings Screen.
  */
 Label g_contrast_label("Contrast:");
+Label g_playlist_label("Playlist:");
 RangeView<double> g_contrast_indicator(g_contrast, 0, 1.0);
-Knob<double> g_contrast_controller(g_contrast, 0.05, 0, 1.0);
-PopController g_back_button(CLICK, LEFT_BTN);
+ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 
-Layout<2, 2> settings_layout = {
+Knob<double> g_contrast_controller(g_contrast, 0.05, 0, 1.0);
+PopController g_back_button(CLICK, ENC_BTN);
+NetworkController g_prev_playlist(PREV_PLAYLIST, CLICK, LEFT_BTN);
+NetworkController g_next_playlist(NEXT_PLAYLIST, CLICK, RIGHT_BTN);
+
+
+Layout<3, 4> settings_layout = {
    {
-      {{0,  0, LCDWIDTH - 1, 10}, g_contrast_label},
-      {{0, 10, LCDWIDTH - 1,  8}, g_contrast_indicator},
+      {{ 0,  0, LCDWIDTH - 1, 10}, g_contrast_label},
+      {{ 0,  8, LCDWIDTH - 1,  6}, g_contrast_indicator},
+      {{ 0, 20, LCDWIDTH - 1, 10}, g_playlist_label},
    },
    {
       {g_contrast_controller},
-      {g_back_button}
+      {g_back_button},
+      {g_prev_playlist},
+      {g_next_playlist}
    }
 };
 
-CompositeScreen<2, 2> g_settings(settings_layout);
+CompositeScreen<3, 4> g_settings(settings_layout);
 
 /*
  * Views for the main screen.
@@ -110,7 +165,6 @@ ScrolledText g_source_scroll(g_source.value());
 RangeView<double> g_volume_indicator(g_volume, 0, 1.0);
 
 ToggleView g_play_indicator(g_playing, g_play_icon, g_pause_icon);
-ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 
 /*
  * Controllers for the main screen.
@@ -118,11 +172,15 @@ ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 Toggle g_play_controller(g_playing, ENC_BTN);
 Knob<double> g_volume_controller(g_volume, 0.05, 0, 1.0);
 PushController g_show_settings(g_settings, HOLD, ENC_BTN);
+NetworkController g_prev_controller(PREV_TRACK, CLICK, LEFT_BTN);
+NetworkController g_next_controller(NEXT_TRACK, CLICK, RIGHT_BTN);
+NetworkController g_like_controller(LIKE_TRACK, HOLD, LEFT_BTN);
+Toggle g_online_controller(g_online, RIGHT_BTN, HOLD);
 
 /*
  * Define the main screen
  */
-const Layout<7, 3> main_layout = {
+const Layout<7, 7> main_layout = {
    {
       {{0, 0, LCDWIDTH, 10}, g_source_scroll},
       {{0, 10, LCDWIDTH, 10}, g_artist_scroll}, 
@@ -136,10 +194,14 @@ const Layout<7, 3> main_layout = {
       {g_play_controller},
       {g_volume_controller},
       {g_show_settings},
+      {g_prev_controller},
+      {g_next_controller},
+      {g_like_controller},
+      {g_online_controller}
    }
 };
 
-CompositeScreen<7, 3> home(main_layout);
+CompositeScreen<7, 7> home(main_layout);
 
 /*
  * This screen shows if we are not paired to a phone.
@@ -150,6 +212,7 @@ ToggleView root(g_paired, home, g_unpaired_screen);
 /*
  * Initialize the UI with our root screen.
  */
+
 UI ui(display, root);
 
 void loop() {
