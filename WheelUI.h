@@ -402,11 +402,11 @@ class Knob : public Controller {
 
 
 /*
- * Controller which pushes and pops screens.
+ * Controller which performs some action in response to user events.
  */
-class NavController : public Controller {
+class Command : public Controller {
   public:
-    NavController(
+    Command(
       EventType push_source,
       uint8_t push_id) :
       m_push_source(push_source),
@@ -428,13 +428,13 @@ class NavController : public Controller {
     const uint8_t m_push_id;
 };
 
-class PushController : public NavController {
+class PushController : public Command {
   public:
     PushController(
       Screen &s,
       EventType src,
       uint8_t id) :
-      NavController::NavController(src, id),
+      Command::Command(src, id),
       m_screen(s) {
     };
 
@@ -446,15 +446,16 @@ class PushController : public NavController {
     Screen &m_screen;
 };
 
-class PopController : public NavController {
+class PopController : public Command {
   public:
     PopController(EventType src, uint8_t id) :
-      NavController::NavController(src, id) {
+      Command::Command(src, id) {
     };
 
     void action(UI &ui) {
       ui.pop();
     };
 };
+
 
 #endif
