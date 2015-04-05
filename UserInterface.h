@@ -134,6 +134,16 @@ class PollingInputSource {
       virtual void poll(UI &q);
 };
 
+/*
+ * Holds information about a region of screen space.
+ */
+struct Rect {
+   uint8_t x;
+   uint8_t y;
+   uint8_t w;
+   uint8_t h;
+};
+
 
 /*
  * Like a Window in a desktop system, but devoted to the entire
@@ -143,7 +153,7 @@ class PollingInputSource {
 class Screen {
    public:
       Screen() {};
-      virtual void draw (Adafruit_GFX &display) {};
+      virtual void draw (Adafruit_GFX &display, const Rect &where) {};
       virtual void handle_event(UI& ui, Event &) {};
 };
 
@@ -154,13 +164,12 @@ class Screen {
  */
 class TestScreen : public Screen {
    public:
-  
       TestScreen() : last_event(null_event)
       {
 	 /* nothing to be done for now */
       };
-      
-      void draw(Adafruit_GFX &display) {
+   
+      void draw(Adafruit_GFX &display, const Rect &where) {
 	 display.println(String("Time:") + last_event.time);
 	 display.println(String("Src: ") + last_event.source);
 	 display.println(String("Data: ") + last_event.data);
@@ -206,8 +215,8 @@ class ScreenStack : public Screen {
 	 }
       };
 
-      void draw(Adafruit_GFX &display) {
-	 (*m_top)->draw(display);
+      void draw(Adafruit_GFX &display, const Rect &where) {
+	 (*m_top)->draw(display, where);
       };
 
       void handle_event(UI &ui, Event &event) {
@@ -240,7 +249,12 @@ class UI {
    public:
       UI(Adafruit_GFX& display, Screen &home):
 	 m_stack(home, 255),
-	 m_display(display) {
+	 m_display(display)
+      {
+	 m_rect.x = 0;
+	 m_rect.y = 0;
+	 m_rect.w = display.width();
+	 m_rect.h = display.height();
       };
   
       void push(Screen &screen) {
@@ -255,7 +269,7 @@ class UI {
 	 if (m_queue.count()) {
 	    m_stack.handle_event(*this, m_queue.get());
 	 }
-	 m_stack.draw(m_display);
+	 m_stack.draw(m_display, m_rect);
       };
     
       void put(unsigned char source, unsigned char data) {
@@ -266,6 +280,7 @@ class UI {
       ScreenStack<10> m_stack;
       Adafruit_GFX& m_display;
       EventQueue m_queue;
+      Rect m_rect;
 };
 
 

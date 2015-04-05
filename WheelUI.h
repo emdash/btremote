@@ -54,7 +54,8 @@ class TextScreen : public Screen {
 	 m_text(text),
 	 m_back_button(back_button) {};
 
-      void draw(Adafruit_GFX &display) {
+      void draw(Adafruit_GFX &display, const Rect &where) {
+	 display.setCursor(where.x, where.y);
 	 display.println(m_text);
       };
 
@@ -94,7 +95,7 @@ class RangeView : public Screen {
       m_h(h){
     };
 
-    void draw(Adafruit_GFX &display) {
+    void draw(Adafruit_GFX &display, const Rect &where) {
       uint8_t 
 	x1 = m_x,
 	y1 = m_y + m_h,
@@ -157,9 +158,9 @@ class CompositeScreen : public Screen {
       m_layout(layout) {
     };
 
-    void draw(Adafruit_GFX &display) {
+    void draw(Adafruit_GFX &display, const Rect &where) {
       for (uint8_t i = 0; i < N_VIEWS; i++) {
-	m_layout.views[i].ref.draw(display);
+	m_layout.views[i].ref.draw(display, where);
       }
     };
 
@@ -262,37 +263,6 @@ class EncoderSrc : public PollingInputSource {
 
 
 /*
- * This is a temporary class that will probaly go away soon.
- */
-class EncoderValueScreen : public Screen {
-  public:
-    
-    EncoderValueScreen() {
-      m_value = 0;
-    };
-    
-    void draw(Adafruit_GFX &display) {
-      display.println(String("Value: ") + m_value);
-    };
-    
-    void handle_event(UI& ui, Event &event) {
-      switch (event.source) {
-	case 1:
-	  m_value += (signed char) event.data;
-	  break;
-	case 2:
-	  m_value = 0;
-	  break; 
-      };
-    };
-    
-  private:
-    int m_value;
-};
-
-
-
-/*
  * Displays a line of text larger than the screen by scrolling it
  * horizontally.
  */
@@ -304,7 +274,7 @@ class ScrolledText : public Screen {
   public:
     ScrolledText(const char *text) : m_text(text) {};
     
-    void draw(Adafruit_GFX &display) {
+    void draw(Adafruit_GFX &display, const Rect &where) {
       display.setTextWrap(false);
       if (strlen(m_text) > CHARS_PER_LINE) {
 	uint8_t w = display.width() - 1;
@@ -335,11 +305,11 @@ class ToggleView : public Screen {
 	 m_false(if_false) {
       };
 
-      void draw(Adafruit_GFX &display) {
+      void draw(Adafruit_GFX &display, const Rect &where) {
 	 if (m_model.value()) {
-	    m_true.draw(display);
+	    m_true.draw(display, where);
 	 } else {
-	    m_false.draw(display);
+	    m_false.draw(display, where);
 	 }
       };
    private:
@@ -366,7 +336,7 @@ class IconView : public Screen {
 	 m_y(y) {
       };
 
-      void draw(Adafruit_GFX &display) {
+      void draw(Adafruit_GFX &display, const Rect &where) {
 	 display.drawBitmap(
 	    m_x, m_y,
 	    m_data,
