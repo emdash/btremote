@@ -18,12 +18,17 @@ template<class T> struct SmartRef {
     T &ref;
 };
 
+struct LayoutItem {
+   Rect bounds;
+   Screen &ref;
+};
+
 template <
   uint8_t N_VIEWS,
   uint8_t N_CONTROLLERS
 >
 struct Layout {
-    SmartRef<Screen> views[N_VIEWS];
+    LayoutItem views[N_VIEWS];
     SmartRef<Controller> controllers[N_CONTROLLERS];
 };
 
@@ -42,6 +47,7 @@ typedef enum {
 } EventType;
 
 #define CLICK_THRESHOLD 1000
+
 
 /*
  * A screen screen which displays static text. Optionally, a screen to
@@ -81,29 +87,21 @@ class RangeView : public Screen {
     RangeView(
       Model<T> &model,
       T min, 
-      T max,
-      uint8_t x, 
-      uint8_t y,
-      uint8_t w,
-      uint8_t h) :
+      T max) :
       m_model(model),
       m_min(min),
-      m_max(max),
-      m_x(x),
-      m_y(y),
-      m_w(w),
-      m_h(h){
+      m_max(max) {
     };
 
     void draw(Adafruit_GFX &display, const Rect &where) {
       uint8_t 
-	x1 = m_x,
-	y1 = m_y + m_h,
-	x2 = m_x + m_w,
+	x1 = where.x,
+	y1 = where.y + where.h,
+	x2 = where.x + where.w,
 	y2 = y1,
 	x3 = x2,
-	y3 = m_y,
-	tfill = m_w * ((m_model.value() - m_min) / (m_max - m_min));
+	y3 = where.y,
+	tfill = where.w * ((m_model.value() - m_min) / (m_max - m_min));
 
       // Draw a triangle outline that "fills up" according to the
       // volume level. I.e. at 0 volume, it's just a solid
@@ -118,8 +116,8 @@ class RangeView : public Screen {
     
       // Now, erase the unfilled portion of the triangle.
       display.fillRect(
-	m_x + tfill, m_y,
-	m_w - tfill, m_h,
+	where.x + tfill, where.y,
+	where.w - tfill, where.h,
 	WHITE);
 
       // now draw the outlined portion of the triangle.
@@ -134,10 +132,6 @@ class RangeView : public Screen {
     Model<T> &m_model;
     T m_min;
     T m_max;
-    const uint8_t m_x;
-    const uint8_t m_y;
-    const uint8_t m_w;
-    const uint8_t m_h;
 };
 
 
@@ -160,7 +154,8 @@ class CompositeScreen : public Screen {
 
     void draw(Adafruit_GFX &display, const Rect &where) {
       for (uint8_t i = 0; i < N_VIEWS; i++) {
-	m_layout.views[i].ref.draw(display, where);
+	m_layout.views[i].ref.draw(display,
+				   m_layout.views[i].bounds);
       }
     };
 
@@ -322,31 +317,26 @@ class ToggleView : public Screen {
 /*
  * Draws an icon at the specified coordinates and dimensions.
  */
-template <
-   uint8_t W,
-   uint8_t H
->
 class IconView : public Screen {
    public:
-      IconView(uint8_t x,
-	       uint8_t y,
-	       const uint8_t *data) : 
+      IconView(uint8_t w, uint8_t h, const uint8_t *data) : 
 	 m_data(data),
-	 m_x(x),
-	 m_y(y) {
+	 m_w(w),
+	 m_h(h) {
       };
 
       void draw(Adafruit_GFX &display, const Rect &where) {
+	 // TODO: implement clipping according to bounds rect
 	 display.drawBitmap(
-	    m_x, m_y,
+	    where.x, where.y,
 	    m_data,
-	    W, H,
+	    m_w, m_h,
 	    BLACK);
       };
    private:
       const uint8_t *m_data;
-      const uint8_t m_x;
-      const uint8_t m_y;
+      const uint8_t m_w;
+      const uint8_t m_h;
 };
 
 

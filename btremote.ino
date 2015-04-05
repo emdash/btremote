@@ -106,15 +106,9 @@ SettingsScreen g_settings;
 ScrolledText< 0, 14> g_artist_scroll(g_artist.value());
 ScrolledText<10, 14> g_track_scroll(g_track.value());
 ScrolledText<20, 14> g_source_scroll(g_source.value());
-SpeakerIcon<LCDWIDTH - 11, LCDHEIGHT - 8> g_speaker_icon;
-PlayIcon   <0,             LCDHEIGHT - 9> g_play_icon;
-PauseIcon  <0,             LCDHEIGHT - 9> g_pause_icon;
-RangeView<double> g_volume_indicator(g_volume, 0, 1.0,
-				     LCDWIDTH - 53, LCDHEIGHT - 9,
-				     40, 8);
+RangeView<double> g_volume_indicator(g_volume, 0, 1.0);
+
 ToggleView g_play_indicator(g_playing, g_play_icon, g_pause_icon);
-OnlineIcon<9, LCDHEIGHT - 9> g_online_icon;
-OfflineIcon<9, LCDHEIGHT - 9> g_offline_icon;
 ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 
 /*
@@ -129,13 +123,13 @@ PushController g_show_settings(g_settings, HOLD, ENC_BTN);
  */
 const Layout<7, 3> main_layout = {
    {
-      {g_source_scroll},
-      {g_artist_scroll}, 
-      {g_track_scroll},
-      {g_speaker_icon},
-      {g_volume_indicator},
-      {g_play_indicator},
-      {g_network_indicator},
+      {{0, 0, 0, 0}, g_source_scroll},
+      {{0, 0, 0, 0}, g_artist_scroll}, 
+      {{0, 0, 0, 0}, g_track_scroll},
+      {{LCDWIDTH - 11, LCDHEIGHT - 9, 0, 0}, g_speaker_icon},
+      {{30, LCDHEIGHT - 9, 40, 8}, g_volume_indicator},
+      {{0, LCDHEIGHT - 9, 0, 0}, g_play_indicator},
+      {{10, LCDHEIGHT - 9, 0, 0}, g_network_indicator},
    },
    {
       {g_play_controller},
