@@ -300,6 +300,14 @@ class ToggleView : public Screen {
 	    m_false.draw(display, where);
 	 }
       };
+
+      void handle_event(UI &ui, Event &event) {
+	 if (m_model.value()) {
+	    m_true.handle_event(ui, event);
+	 } else {
+	    m_false.handle_event(ui, event);
+	 }
+      };
    private:
       Model<boolean> &m_model;
       Screen &m_true;
