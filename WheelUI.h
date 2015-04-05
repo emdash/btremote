@@ -95,7 +95,7 @@ class RangeView : public Screen {
 	y2 = y1,
 	x3 = x2,
 	y3 = where.y,
-	tfill = where.w * ((m_model.value() - m_min) / (m_max - m_min));
+	 tfill = (where.w * (m_model.value() - m_min)) / (m_max - m_min);
 
       // Draw a triangle outline that "fills up" according to the
       // volume level. I.e. at 0 volume, it's just a solid
