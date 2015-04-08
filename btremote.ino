@@ -56,7 +56,7 @@ typedef enum {
 ButtonSrc< 9, INPUT_PULLUP, ENC_BTN, true> encBtn;
 ButtonSrc<12, INPUT_PULLUP, LEFT_BTN, true> leftBtn;
 ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
-//EncoderSrc<'a', 10, 11, WHEEL> encoder;
+EncoderSrc<'a', 10, 11, WHEEL> encoder;
 
 /*
  * Define a model for the contrast setting on a supported display.
@@ -234,21 +234,48 @@ ToggleView root(g_paired, home, g_unpaired_screen);
 UI ui(display, root);
 
 void handle_bt_char(char c) {
-   static uint8_t string_mode = 0;
+   static enum {
+      NORMAL = 0,
+      STRING,
+      VOLUME_LOW,
+      VOLUME_HIGH
+   } mode;
+
    static char *buffer = 0;
    static uint8_t i = 0;
+   static int volume = 0;
 
-   Serial.print("<");
+   Serial.print('<');
    Serial.println(c);
 
-   if (string_mode) {
+   // update string buffers in place. buffer should point to a valid
+   // storage location. no bounds checking, be careful!.
+   if (mode == STRING) {
       if (c == '\n') {
 	 buffer[i] = 0;
-	 string_mode = 0;
+	 mode = NORMAL;
       } else {
 	 buffer[i++] = c;
       }
-
+      return;
+   // lower nibble of volume byte
+   } else if (mode == VOLUME_LOW) {
+      if ((c >= '0') && (c <= '9')) {
+	 volume |= (c - '0');
+      } else if (('a' <= c) && (c <= 'f')) {
+	 volume |= 10 + (c - 'a');
+      }
+      mode = NORMAL;
+      return;
+   // upper nibble of volume byte.
+   } else if (mode == VOLUME_HIGH) {
+      if ((c >= '0') && (c <= '9')) {
+	 volume |= (c - '0');
+      } else if (('a' <= c) && (c <= 'f')) {
+	 volume |= 10 + (c - 'a');
+      }
+      volume = volume << 4;
+      mode = VOLUME_LOW;
       return;
    }
 
@@ -267,18 +294,22 @@ void handle_bt_char(char c) {
 	 break;
       case 's':
 	 buffer = (char *) g_source.value();
-	 string_mode = 1;
+	 mode = STRING;
 	 i = 0;
 	 break;
       case 'a':
 	 buffer = (char *) g_artist.value();
-	 string_mode = 1;
+	 mode = STRING;
 	 i = 0;
 	 break;
       case 't':
 	 buffer = (char *) g_track.value();
-	 string_mode = 1;
+	 mode = STRING;
 	 i = 0;
+	 break;
+      case 'v':
+	 volume = 0;
+	 mode = VOLUME_HIGH;
 	 break;
    };
 }
@@ -287,7 +318,7 @@ void loop() {
    static unsigned long next = 0;
 
    // Poll input sources for events
-   //encoder.poll(ui);
+   encoder.poll(ui);
    encBtn.poll(ui);
    leftBtn.poll(ui);
    rightBtn.poll(ui);
@@ -310,11 +341,9 @@ void loop() {
 void setup() {
    Serial.begin(9600);
    display.begin();
-   Serial.println("got here");
-
    ble_begin();
 
-   //encoder.init();
+   encoder.init();
    encBtn.init();
    leftBtn.init();
    rightBtn.init();
