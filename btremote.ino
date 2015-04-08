@@ -4,12 +4,28 @@ AdaEncoder, and Adafruit_GFX. Based on custom UI framework in this
 sketch.
 *********************************************************************/
 
+/*
+ * Defining these macros hopefully reduces the footprint of the
+ * ooPinChangeInt library by about 100 bytes. We are trying to squeeze
+ * every last drop of ram at this point. This also prevents the
+ * library from breaking the bluetooth interface.
+ */
+#define NO_PORTC_PINCHANGES
+#define NO_PORTD_PINCHANGES
+
+/*
+ * This is a hack. Let's see if it works.
+ */
+
 #include <ooPinChangeInt.h>
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_PCD8544.h>
 #include <AdaEncoder.h>
 #include <string.h>
+#include <boards.h>
+#include <RBL_nRF8001.h>
+
 #include "WheelUI.h"
 #include "MVC.h"
 #include "Icons.h"
@@ -40,7 +56,7 @@ typedef enum {
 ButtonSrc< 9, INPUT_PULLUP, ENC_BTN, true> encBtn;
 ButtonSrc<12, INPUT_PULLUP, LEFT_BTN, true> leftBtn;
 ButtonSrc<13, INPUT_PULLUP, RIGHT_BTN, true> rightBtn;
-EncoderSrc<'a', 10, 11, WHEEL> encoder;
+//EncoderSrc<'a', 10, 11, WHEEL> encoder;
 
 /*
  * Define a model for the contrast setting on a supported display.
@@ -84,9 +100,10 @@ typedef enum {
    PREV_PLAYLIST,
 } NetworkMessage;
 
-#define DEBUG_CASE(name)			\
+#define BT_CASE(code, name)			\
    case name:					\
-   Serial.println(#name);			\
+   Serial.print('>');				\
+   Serial.println(code);			\
    break
 
 class NetworkController : public Command {
@@ -101,12 +118,13 @@ class NetworkController : public Command {
 
       void action(UI &ui) {
 	 switch (m_message) {
-	    DEBUG_CASE(TOGGLE_PLAYBACK);
-	    DEBUG_CASE(NEXT_TRACK);
-	    DEBUG_CASE(PREV_TRACK);
-	    DEBUG_CASE(LIKE_TRACK);
-	    DEBUG_CASE(PREV_PLAYLIST);
-	    DEBUG_CASE(NEXT_PLAYLIST);
+	    BT_CASE('x', TOGGLE_PLAYBACK);
+	    BT_CASE('N', NEXT_TRACK);
+	    BT_CASE('P', PREV_TRACK);
+	    BT_CASE('L', LIKE_TRACK);
+	    BT_CASE('p', PREV_PLAYLIST);
+	    BT_CASE('n', NEXT_PLAYLIST);
+	    BT_CASE('o', TOGGLE_ONLINE);
 	 };
       };
    private:
@@ -215,26 +233,70 @@ ToggleView root(g_paired, home, g_unpaired_screen);
 
 UI ui(display, root);
 
+void handle_bt_char(char c) {
+   static uint8_t string_mode = 0;
+   static char *buffer = 0;
+   static uint8_t i = 0;
+
+   Serial.print("<");
+   Serial.println(c);
+
+   if (string_mode) {
+      if (c == '\n') {
+	 buffer[i] = 0;
+	 string_mode = 0;
+      } else {
+	 buffer[i++] = c;
+      }
+
+      return;
+   }
+
+   switch (c) {
+      case 'x':
+	 g_playing.update(false);
+	 break;
+      case 'X':
+	 g_playing.update(true);
+	 break;
+      case 'o':
+	 g_online.update(false);
+	 break;
+      case 'O':
+	 g_online.update(true);
+	 break;
+      case 's':
+	 buffer = (char *) g_source.value();
+	 string_mode = 1;
+	 i = 0;
+	 break;
+      case 'a':
+	 buffer = (char *) g_artist.value();
+	 string_mode = 1;
+	 i = 0;
+	 break;
+      case 't':
+	 buffer = (char *) g_track.value();
+	 string_mode = 1;
+	 i = 0;
+	 break;
+   };
+}
+
 void loop() {
    static unsigned long next = 0;
+
    // Poll input sources for events
-   encoder.poll(ui);
+   //encoder.poll(ui);
    encBtn.poll(ui);
    leftBtn.poll(ui);
    rightBtn.poll(ui);
 
-   // Test some features by reading data from Serial.
-   if (Serial.available()) {
-      switch (Serial.read()) {
-	 case 'o':
-	    g_online.update(!g_online.value());
-	    break;
-	 case 'p':
-	    g_paired.update(!g_paired.value());
-	    break;
-      };
+   while (ble_available()) {
+      handle_bt_char(ble_read());
    }
-  
+   ble_do_events();
+
    // update screen every 25ms
    // TODO: dirty detection
    if (millis() > next) {
@@ -250,7 +312,9 @@ void setup() {
    display.begin();
    Serial.println("got here");
 
-   encoder.init();
+   ble_begin();
+
+   //encoder.init();
    encBtn.init();
    leftBtn.init();
    rightBtn.init();
