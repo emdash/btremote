@@ -266,6 +266,7 @@ void handle_bt_char(char c) {
 	 volume |= 10 + (c - 'a');
       }
       mode = NORMAL;
+      g_volume.update(double(volume) / 255);
       return;
    // upper nibble of volume byte.
    } else if (mode == VOLUME_HIGH) {
