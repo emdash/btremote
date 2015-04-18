@@ -17,15 +17,15 @@ static const uint8_t PROGMEM SPEAKER_DATA[] = {
 IconView g_speaker_icon(16, 8, SPEAKER_DATA);
 
 static const unsigned char PROGMEM PLAY_DATA[] = {
-   B01100000,
-   B01110000,
-   B01111000,
-   B01111100,
-   B01111110,
-   B01111100,
-   B01111000,
-   B01110000,
-   B01100000,
+   B00100000,
+   B00110000,
+   B00111000,
+   B00111100,
+   B00111110,
+   B00111100,
+   B00111000,
+   B00110000,
+   B00100000,
 };
 
 IconView g_play_icon(8, 9, PLAY_DATA);
@@ -44,7 +44,7 @@ static const unsigned char PROGMEM PAUSE_DATA[] = {
 
 IconView g_pause_icon(8, 9, PAUSE_DATA);
 
-static const unsigned char PROGMEM ONLINE_DATA[] = {
+static const unsigned char PROGMEM OFFLINE_DATA[] = {
    B00000011, B11000000, 
    B00011100, B00111000, 
    B00100000, B00000100, 
@@ -55,9 +55,9 @@ static const unsigned char PROGMEM ONLINE_DATA[] = {
    B00000001, B10000000, 
 };	      
 	      
-IconView g_online_icon(16, 8, ONLINE_DATA);
+IconView g_offline_icon(16, 8, OFFLINE_DATA);
 	      
-static const  unsigned char PROGMEM OFFLINE_DATA[] = {
+static const  unsigned char PROGMEM ONLINE_DATA[] = {
    B00000011, B11000000, 
    B00011100, B00111000, 
    B00100000, B00000100, 
@@ -68,6 +68,6 @@ static const  unsigned char PROGMEM OFFLINE_DATA[] = {
    B00000001, B10000000, 
 };
 
-IconView g_offline_icon(16, 8, OFFLINE_DATA);
+IconView g_online_icon(16, 8, ONLINE_DATA);
 
 #endif
