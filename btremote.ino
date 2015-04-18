@@ -104,6 +104,7 @@ typedef enum {
    case name:					\
    Serial.print('>');				\
    Serial.println(code);			\
+   ble_write(code);				\
    break
 
 class NetworkController : public Command {
@@ -150,7 +151,6 @@ ContrastModel         g_contrast(display, 0.5);
 Label g_contrast_label("Contrast:");
 Label g_playlist_label("Playlist:");
 RangeView<double> g_contrast_indicator(g_contrast, 0, 1.0);
-ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 
 Knob<double> g_contrast_controller(g_contrast, 0.05, 0, 1.0);
 PopController g_back_button(CLICK, ENC_BTN);
@@ -181,19 +181,20 @@ ScrolledText g_artist_scroll(g_artist.value());
 ScrolledText g_track_scroll(g_track.value());
 ScrolledText g_source_scroll(g_source.value());
 RangeView<double> g_volume_indicator(g_volume, 0, 1.0);
-
 ToggleView g_play_indicator(g_playing, g_play_icon, g_pause_icon);
+ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
+
 
 /*
  * Controllers for the main screen.
  */
-Toggle g_play_controller(g_playing, ENC_BTN);
 Knob<double> g_volume_controller(g_volume, 0.05, 0, 1.0);
 PushController g_show_settings(g_settings, HOLD, ENC_BTN);
-NetworkController g_prev_controller(PREV_TRACK, CLICK, LEFT_BTN);
-NetworkController g_next_controller(NEXT_TRACK, CLICK, RIGHT_BTN);
-NetworkController g_like_controller(LIKE_TRACK, HOLD, LEFT_BTN);
-Toggle g_online_controller(g_online, RIGHT_BTN, HOLD);
+NetworkController g_play_controller  (TOGGLE_PLAYBACK, CLICK, ENC_BTN);
+NetworkController g_prev_controller  (PREV_TRACK,      CLICK, LEFT_BTN);
+NetworkController g_next_controller  (NEXT_TRACK,      CLICK, RIGHT_BTN);
+NetworkController g_online_controller(TOGGLE_ONLINE,   HOLD,  RIGHT_BTN);
+NetworkController g_like_controller  (LIKE_TRACK,      HOLD,  LEFT_BTN);
 
 /*
  * Define the main screen
