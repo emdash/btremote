@@ -84,52 +84,58 @@ class ContrastModel : public ProxyModel<double> {
       static const uint8_t max_contrast = 70;
 };
 
+/*
+ * A controller which translates encoder pulses into volume up/down
+ * commands over bluetooth. We don't need to store any actual data.
+ */
+class VolumeControl : public Controller {
+   public:
+
+      VolumeControl() : Controller() {};
+
+      void handle_event(UI &ui, Event &event) {
+	 char i;
+	 char d = (char) event.data;
+	 
+	 if (event.source == WHEEL) {
+	    if (d > 0) {
+	       for (i = 0; i < d; i++) {
+		  ble_write('V');
+	       }
+	    } else {
+	       for (i = 0; i > d; i--) {
+		  ble_write('v');
+	       }
+	    }
+	 }
+      }
+};
 
 /*
- * Controllers which make network requests in response to user
- * Define the main screeninput. This is a dummy implementation which
- * fakes network calls over the Serial line.
+ * A controller which maps a button event to a bluetooth
+ * command.
  */
-typedef enum {
-   TOGGLE_PLAYBACK,
-   NEXT_TRACK,
-   PREV_TRACK,
-   LIKE_TRACK,
-   TOGGLE_ONLINE,
-   NEXT_PLAYLIST,
-   PREV_PLAYLIST,
-} NetworkMessage;
-
-#define BT_CASE(code, name)			\
-   case name:					\
-   Serial.print('>');				\
-   Serial.println(code);			\
-   ble_write(code);				\
-   break
-
-class NetworkController : public Command {
+class NetworkController : public Controller {
    public:
-      NetworkController(
-	 NetworkMessage message,
-	 EventType source,
-	 uint8_t id) :
-	 Command::Command(source, id),
-	 m_message(message) {
-      };
+      NetworkController(char code,
+			uint8_t event,
+			uint8_t id) :
+	 m_code(code),
+	 m_event(event),
+	 m_id(id) {
+      }
 
-      void action(UI &ui) {
-	 switch (m_message) {
-	    BT_CASE('x', TOGGLE_PLAYBACK);
-	    BT_CASE('N', NEXT_TRACK);
-	    BT_CASE('P', PREV_TRACK);
-	    BT_CASE('L', LIKE_TRACK);
-	    BT_CASE('p', PREV_PLAYLIST);
-	    BT_CASE('n', NEXT_PLAYLIST);
-	    BT_CASE('o', TOGGLE_ONLINE);
-	 };
-      };
+      void handle_event(UI &ui, Event &event) {
+	 if (event.source == m_event &&
+	     event.data == m_id) {
+	    ble_write(m_code);
+	 }
+      }
+
    private:
-      NetworkMessage m_message;
+      char m_code;
+      uint8_t m_event;
+      uint8_t m_id;
 };
 
 
@@ -154,9 +160,8 @@ RangeView<double> g_contrast_indicator(g_contrast, 0, 1.0);
 
 Knob<double> g_contrast_controller(g_contrast, 0.05, 0, 1.0);
 PopController g_back_button(CLICK, ENC_BTN);
-NetworkController g_prev_playlist(PREV_PLAYLIST, CLICK, LEFT_BTN);
-NetworkController g_next_playlist(NEXT_PLAYLIST, CLICK, RIGHT_BTN);
-
+NetworkController g_prev_playlist('p', CLICK, LEFT_BTN);
+NetworkController g_next_playlist('n', CLICK, RIGHT_BTN);
 
 Layout<3, 4> settings_layout = {
    {
@@ -188,13 +193,14 @@ ToggleView g_network_indicator(g_online, g_online_icon, g_offline_icon);
 /*
  * Controllers for the main screen.
  */
-Knob<double> g_volume_controller(g_volume, 0.05, 0, 1.0);
+VolumeControl  g_volume_controller;
 PushController g_show_settings(g_settings, HOLD, ENC_BTN);
-NetworkController g_play_controller  (TOGGLE_PLAYBACK, CLICK, ENC_BTN);
-NetworkController g_prev_controller  (PREV_TRACK,      CLICK, LEFT_BTN);
-NetworkController g_next_controller  (NEXT_TRACK,      CLICK, RIGHT_BTN);
-NetworkController g_online_controller(TOGGLE_ONLINE,   HOLD,  RIGHT_BTN);
-NetworkController g_like_controller  (LIKE_TRACK,      HOLD,  LEFT_BTN);
+
+NetworkController g_play_controller  ('x', CLICK, ENC_BTN);
+NetworkController g_prev_controller  ('P', CLICK, LEFT_BTN);
+NetworkController g_next_controller  ('N', CLICK, RIGHT_BTN);
+NetworkController g_online_controller('o', HOLD,  RIGHT_BTN);
+NetworkController g_like_controller  ('L', HOLD,  LEFT_BTN);
 
 /*
  * Define the main screen
