@@ -231,7 +231,7 @@ CompositeScreen<7, 7> home(main_layout);
 /*
  * This screen shows if we are not paired to a phone.
  */
-Label g_unpaired_screen("Press any key to pair.");
+Label g_unpaired_screen("Disonnected.");
 ToggleView root(g_paired, home, g_unpaired_screen);
 
 /*
