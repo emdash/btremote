@@ -145,7 +145,7 @@ class NetworkController : public Controller {
 DirectModel<double>   g_volume(0.5);
 DirectModel<boolean>  g_playing(false);
 DirectModel<boolean>  g_online(false);
-DirectModel<boolean>  g_paired(true);
+DirectModel<boolean>  g_paired(false);
 DirectStringModel<25> g_source("Spotify(Starred)");
 DirectStringModel<25> g_artist("Phill Collins");
 DirectStringModel<25> g_track("In the air tonight.");
@@ -331,6 +331,8 @@ void loop() {
    leftBtn.poll(ui);
    rightBtn.poll(ui);
 
+   // Poll for bluetooth connectivity and data.
+   g_paired.update(ble_connected());
    while (ble_available()) {
       handle_bt_char(ble_read());
    }
