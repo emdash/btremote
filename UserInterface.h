@@ -266,12 +266,12 @@ class UI {
       };
     
       void loop() {
-	 if (m_queue.count()) {
+	 while (m_queue.count()) {
 	    m_stack.handle_event(*this, m_queue.get());
 	 }
 	 m_stack.draw(m_display, m_rect);
       };
-    
+
       void put(unsigned char source, unsigned char data) {
 	 m_queue.put(source, data);
       };
