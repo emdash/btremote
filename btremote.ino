@@ -324,6 +324,7 @@ void handle_bt_char(char c) {
 
 void loop() {
    static unsigned long next = 0;
+   uint8_t paired;
 
    // Poll input sources for events
    encoder.poll(ui);
@@ -332,7 +333,10 @@ void loop() {
    rightBtn.poll(ui);
 
    // Poll for bluetooth connectivity and data.
-   g_paired.update(ble_connected());
+   if ((paired = ble_connected()) != g_paired.value()) {
+      g_paired.update(paired);
+   }
+
    while (ble_available()) {
       handle_bt_char(ble_read());
    }
