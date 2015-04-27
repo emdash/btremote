@@ -255,17 +255,22 @@ void handle_bt_char(char c) {
    Serial.print('<');
    Serial.println(c);
 
-   // update string buffers in place. buffer should point to a valid
-   // storage location. no bounds checking, be careful!.
    if (mode == STRING) {
       if (c == '\n') {
-	 buffer[i] = 0;
 	 mode = NORMAL;
-      } else {
-	 buffer[i++] = c;
+	 return;
       }
-      return;
-   // lower nibble of volume byte
+
+      if (i < 24) {
+	 buffer[i] = c;
+	 buffer[i + 1] = 0;
+	 i += 1;
+	 return;
+      } else {
+	 Serial.print('!');
+	 return;
+      }
+
    } else if (mode == VOLUME_LOW) {
       if ((c >= '0') && (c <= '9')) {
 	 volume |= (c - '0');
@@ -275,7 +280,7 @@ void handle_bt_char(char c) {
       mode = NORMAL;
       g_volume.update(double(volume) / 255);
       return;
-   // upper nibble of volume byte.
+
    } else if (mode == VOLUME_HIGH) {
       if ((c >= '0') && (c <= '9')) {
 	 volume |= (c - '0');
