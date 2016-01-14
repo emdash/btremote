@@ -55,6 +55,7 @@ more, see:
 - WheelUI.h
 
 Icons are pixel-art, defined as arrays of binary literals, which are
-then wrapped in a UI View.
+then wrapped in a UI View. If you squint at the text, you can almost see
+them.
 
 - icons.h
