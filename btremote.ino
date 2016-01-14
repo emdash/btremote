@@ -30,8 +30,6 @@ sketch.
 #include "MVC.h"
 #include "Icons.h"
 
-#define LEN(x) (sizeof(x) / sizeof(x[0]))
-
 /*
  * Define the display, including hardware pin-outs.
  */
@@ -240,6 +238,13 @@ ToggleView root(g_paired, home, g_unpaired_screen);
 
 UI ui(display, root);
 
+/*
+ * I hate to write code like this, but while
+ * we're limited to ASCII serial emulation, 
+ * it's the best available approach. It's fast, and roughly
+ * constant space. And it avoids including extra
+ * string methods in the binary.
+ */
 void handle_bt_char(char c) {
    static enum {
       NORMAL = 0,
@@ -371,7 +376,7 @@ void setup() {
    display.setContrast(60);
    display.clearDisplay();
 
-   // text display tests
+   // set text style
    display.setTextSize(1);
    display.setTextColor(BLACK);
 }
