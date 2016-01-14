@@ -186,6 +186,11 @@ class TestScreen : public Screen {
 
 /*
  * A Screen that manages a fixe-sized stack of screens.
+ *
+ * This class contains one of the few significant,
+ * unavoidable uses of pointers, and the only crasher bug
+ * I experienced during development occurred here, and
+ * involved incorrect pointer arithmetic.
  */
 template<
    uint8_t SIZE
@@ -242,8 +247,7 @@ class ScreenStack : public Screen {
  * the top level of your sketch. Then you should call its loop method
  * from loop().
  *
- * For now, we need to manually inject events into the event loop with
- * put(). This will change when InputSources are implemented.
+ * Events are injected with put().
  */
 class UI {
    public:
@@ -277,6 +281,8 @@ class UI {
       };
     
    private:
+      // I don't really like coupling the screen stack to this class,
+      // but it's expedient for the time being.
       ScreenStack<10> m_stack;
       Adafruit_GFX& m_display;
       EventQueue m_queue;
