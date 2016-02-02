@@ -14,10 +14,29 @@
 #include "UserInterface.h"
 #include "MVC.h"
 
+
+/*
+ * C++ forbids arrays of references, but allows arrays of structs, and
+ * reference members of structs. In desktop programming, the usual
+ * approach is to declare arrays of pointers to T, but I prefer
+ * reference semantics where possible for this embedded project.
+ *
+ * As a work-around, SmartRef is a helper type which parameterizes a
+ * single-element struct whose member is a reference to an arbitrary
+ * type T. An array can then be declared of SmartRef<T> in the usual
+ * manner.
+ */
 template<class T> struct SmartRef {
     T &ref;
 };
 
+
+/*
+ * LayoutItem and Layout are helper types for the CompositeScreen
+ * class. These hold layout information for the entire screen,
+ * allowing static definition of the entire UI via braced initializer
+ * lists.
+ */
 struct LayoutItem {
    Rect bounds;
    Screen &ref;
